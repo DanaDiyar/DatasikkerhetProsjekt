@@ -67,4 +67,52 @@ if (isset($_POST['comment_text']) && isset($_POST['message_id'])) {
         PIN-kode: <input type="text" name="pin_code" required maxlength="4">
         <input type="submit" value="Vis meldinger">
     </form>
-    <hr>
+    <hr> 
+
+    <?php if ($subjectInfo): ?>
+        <h2><?= htmlspecialchars($subjectInfo['subject_code']) ?> - <?= htmlspecialchars($subjectInfo['subject_name']) ?></h2>
+        <?php
+        // Hent foreleser-info
+        $stmtLect = $pdo->prepare("SELECT name, image_url FROM users WHERE id = ?");
+        $stmtLect->execute([$subjectInfo['lecturer_id']]);
+        $lecturerData = $stmtLect->fetch(PDO::FETCH_ASSOC);
+        ?>
+        <p>Foreleser: <?= htmlspecialchars($lecturerData['name']) ?></p>
+        <?php if ($lecturerData['image_url']): ?>
+            <img src="<?= htmlspecialchars($lecturerData['image_url']) ?>" alt="Bilde av foreleser" width="100">
+        <?php endif; ?>
+
+        <hr>
+
+        <?php foreach ($messages as $msg): ?>
+            <div style="border:1px solid #ccc; margin-bottom:10px; padding:10px;">
+                <p><strong>Melding (anonym):</strong> <?= htmlspecialchars($msg['message_text']) ?></p>
+                <?php if ($msg['reply_text']): ?>
+                    <p><strong>Svar fra foreleser:</strong> <?= htmlspecialchars($msg['reply_text']) ?></p>
+                <?php endif; ?>
+                
+                <?php
+                // Hent kommentarer til denne meldingen
+                $stmtComm = $pdo->prepare("SELECT comment_text, created_at FROM comments WHERE message_id = ? ORDER BY created_at DESC");
+                $stmtComm->execute([$msg['id']]);
+                $comments = $stmtComm->fetchAll(PDO::FETCH_ASSOC);
+                ?>
+                <div style="margin-left:20px;">
+                    <strong>Kommentarer:</strong><br>
+                    <?php foreach ($comments as $c): ?>
+                        <p>- <?= htmlspecialchars($c['comment_text']) ?> (<?= $c['created_at'] ?>)</p>
+                    <?php endforeach; ?>
+                    <form method="post">
+                        <input type="hidden" name="message_id" value="<?= $msg['id'] ?>">
+                        <input type="text" name="comment_text" placeholder="Skriv en kommentar...">
+                        <input type="submit" value="Legg til">
+                    </form>
+                </div>
+                <p><a href="?report=<?= $msg['id'] ?>">Rapporter upassende melding</a></p>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+
+    <p><a href="login.php">Logg inn</a> (for studenter/forelesere)</p>
+</body>
+</html>
