@@ -1,10 +1,27 @@
 <?php
-// Enkel håndtering av input (bare for testing, ikke for produksjon)
-$username = $_POST['username'];
-$password = $_POST['password'];
+session_start();
 
-// Bare for å vise innsendte data (ingen backend-sjekk her)
-echo "<h2>Submitted Data</h2>";
-echo "Username: " . htmlspecialchars($username) . "<br>";
-echo "Password: " . htmlspecialchars($password) . "<br>";
+// Dummy database (erstatt med ekte database)
+$users = [
+    'student1' => 'password123', // Brukernavn => Passord
+    'lecturer1' => 'securepass',
+];
+
+// Hent innsendte data fra skjema
+$username = htmlspecialchars($_POST['username']);
+$password = htmlspecialchars($_POST['password']);
+
+// Valider brukernavn og passord
+if (isset($users[$username]) && $users[$username] === $password) {
+    // Opprett økt for brukeren
+    $_SESSION['logged_in_user'] = $username;
+    echo "<h2>Login Successful</h2>";
+    echo "Welcome, " . htmlspecialchars($username) . "!";
+    echo "<br><a href='welcome.php'>Go to Dashboard</a>";
+} else {
+    // Feilmelding ved feil brukernavn eller passord
+    echo "<h2>Login Failed</h2>";
+    echo "Incorrect username or password.";
+    echo "<br><a href='index.php'>Go back to Login Page</a>";
+}
 ?>
