@@ -14,7 +14,7 @@
     <form method="post">
         Emnekode: <input type="text" name="subject_code" required>
         PIN-kode: <input type="text" name="pin_code" required maxlength="4">
-        <input type="submit" value="Vis meldinger">
+        <input type="submit" class="btn" value="Vis meldinger">
     </form>
     <hr> 
 
@@ -54,7 +54,7 @@
                     <form method="post">
                         <input type="hidden" name="message_id" value="<?= $msg['id'] ?>">
                         <input type="text" name="comment_text" placeholder="Skriv en kommentar...">
-                        <input type="submit" value="Legg til">
+                        <input type="submit" class="btn" value="Legg til">
                     </form>
                 </div>
                 <p><a href="?report=<?= $msg['id'] ?>">Rapporter upassende melding</a></p>
