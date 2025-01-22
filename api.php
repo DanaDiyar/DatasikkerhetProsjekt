@@ -1,18 +1,29 @@
 <?php
-include 'database.php';
+// For debugging: Vis alle feil
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+include 'database.php'; // Absolutt sti for å inkludere filen
 
 header("Content-Type: application/json");
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['action'])) {
+        echo json_encode(['status' => 'Action Found: ' . $_GET['action']]); // Debug: Hva kommer i action?
+        
         if ($_GET['action'] === 'getMessages') {
             $sql = "SELECT * FROM messages";
             $result = $conn->query($sql);
-            $messages = [];
-            while ($row = $result->fetch_assoc()) {
-                $messages[] = $row;
+
+            if ($result) {
+                $messages = [];
+                while ($row = $result->fetch_assoc()) {
+                    $messages[] = $row;
+                }
+                echo json_encode($messages);
+            } else {
+                echo json_encode(['error' => 'Database query failed.']);
             }
-            echo json_encode($messages);
         } elseif ($_GET['action'] === 'reportMessage' && isset($_GET['messageId'])) {
             $messageId = intval($_GET['messageId']);
             $sql = "UPDATE messages SET reported = 1 WHERE id = $messageId";
@@ -57,3 +68,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 $conn->close();
+?>
