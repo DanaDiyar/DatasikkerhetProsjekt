@@ -1,48 +1,37 @@
 <?php
 session_start();
-require 'db.php';  // Sørg for at db.php har en korrekt databaseforbindelse
+require 'db.php';  // Sørg for at denne filen inneholder riktig databaseforbindelse
 
 $errors = [];
 $success = "";
 
-// Registrering av student
+// Registrering av student (kun navn og e-post for enkel testing)
 if (isset($_POST['register'])) {
-    $name = $_POST['name'];
-    $email = $_POST['email'];
-    $study_program = $_POST['study_program'];
-    $year = $_POST['year'];
+    $name = trim($_POST['name']);
+    $email = trim($_POST['email']);
 
-    // Sjekk om e-post allerede eksisterer
-    $stmt = $pdo->prepare("SELECT id FROM students WHERE email = ?");
-    $stmt->execute([$email]);
-    if ($stmt->fetch()) {
-        $errors[] = "E-post er allerede registrert.";
+    $stmt = $pdo->prepare("INSERT INTO students (name, email) VALUES (?, ?)");
+    if ($stmt->execute([$name, $email])) {
+        $success = "Registrering vellykket!";
     } else {
-        // Sett inn studentdata
-        $stmt = $pdo->prepare("INSERT INTO students (name, email, study_program, year) VALUES (?, ?, ?, ?)");
-        if ($stmt->execute([$name, $email, $study_program, $year])) {
-            $success = "Registrering vellykket! Du kan nå logge inn.";
-        } else {
-            $errors[] = "Feil ved registrering.";
-        }
+        $errors[] = "Feil ved registrering.";
     }
 }
 
 // Innlogging
 if (isset($_POST['login'])) {
-    $email = $_POST['email'];
+    $email = trim($_POST['email']);
 
     $stmt = $pdo->prepare("SELECT * FROM students WHERE email = ?");
     $stmt->execute([$email]);
     $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($student) {
-        $_SESSION['student_id'] = $student['id'];
         $_SESSION['student_name'] = $student['name'];
-        header("Location: dashboard.php");
+        header("Location: welcome.php");
         exit();
     } else {
-        $errors[] = "Feil e-post eller passord.";
+        $errors[] = "E-post ikke funnet.";
     }
 }
 
@@ -86,8 +75,6 @@ if (isset($_POST['send_message'])) {
     <form method="post">
         Navn: <input type="text" name="name" required><br>
         E-post: <input type="email" name="email" required><br>
-        Studieretning: <input type="text" name="study_program" required><br>
-        Studiekull: <input type="number" name="year" required><br>
         <input type="submit" name="register" value="Registrer">
     </form>
 
