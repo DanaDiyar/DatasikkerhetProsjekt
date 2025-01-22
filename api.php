@@ -1,5 +1,5 @@
 <?php
-include '/var/www/html/steg1_dana/database/database.php';
+include 'database.php';
 
 header("Content-Type: application/json");
 
