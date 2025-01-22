@@ -130,3 +130,38 @@ if (isset($_POST['forgot_password'])) {
     </select><br>
     <button type="submit" name="login">Logg inn</button>
 </form>
+<h2>Logg inn</h2>
+<form method="post">
+    E-post: <input type="email" name="email" required><br>
+    Passord: <input type="password" name="password" required><br>
+    Rolle:
+    <select name="role" id="role-select" required>
+        <option value="">Velg rolle</option>
+        <option value="student">Student</option>
+        <option value="lecturer">Foreleser</option>
+    </select><br>
+    <button type="submit" name="login">Logg inn</button>
+</form>
+
+<!-- Glemt passord-knapp -->
+<form method="post" id="forgot-password-form" style="display: none;">
+    <input type="hidden" name="role" id="hidden-role">
+    <input type="hidden" name="email" id="hidden-email">
+    <button type="submit" name="forgot_password">Glemt passord</button>
+</form>
+
+<script>
+    // Dynamisk visning av "Glemt passord"-knappen
+    const roleSelect = document.getElementById("role-select");
+    const forgotPasswordForm = document.getElementById("forgot-password-form");
+    const hiddenRoleInput = document.getElementById("hidden-role");
+
+    roleSelect.addEventListener("change", function () {
+        if (roleSelect.value) {
+            hiddenRoleInput.value = roleSelect.value;
+            forgotPasswordForm.style.display = "block";
+        } else {
+            forgotPasswordForm.style.display = "none";
+        }
+    });
+</script>
