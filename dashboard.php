@@ -1,21 +1,6 @@
 <?php
-session_start();
-
 function sanitize($data) {
     return htmlspecialchars(strip_tags(trim($data)));
-}
-
-function hashPassword($password) {
-    return password_hash($password, PASSWORD_BCRYPT);
-}
-
-function verifyPassword($password, $hash) {
-    return password_verify($password, $hash);
-}
-
-// Sjekk om foreleseren er logget inn
-if (!isset($_SESSION['lecturer_id'])) {
-    die("Du må logge inn for å se denne siden.");
 }
 
 // Simulerte meldinger (kan erstattes med database)
@@ -25,15 +10,15 @@ $messages = [
 ];
 
 // Simulert lagret passord-hash (erstatt med database)
-$fake_password_hash = hashPassword("password123");
+$fake_password_hash = password_hash("password123", PASSWORD_BCRYPT);
 
 // Håndtering av passordbytte
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
     $old_password = sanitize($_POST['old_password']);
     $new_password = sanitize($_POST['new_password']);
 
-    if (verifyPassword($old_password, $fake_password_hash)) {
-        $new_password_hash = hashPassword($new_password);
+    if (password_verify($old_password, $fake_password_hash)) {
+        $new_password_hash = password_hash($new_password, PASSWORD_BCRYPT);
         echo "<p style='color: green;'>Passordet er endret!</p>";
     } else {
         echo "<p style='color: red;'>Gammelt passord er feil.</p>";

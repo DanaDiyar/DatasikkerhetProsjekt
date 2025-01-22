@@ -1,13 +1,6 @@
 <?php
-session_start();
-
 function sanitize($data) {
     return htmlspecialchars(strip_tags(trim($data)));
-}
-
-// Sjekk om foreleseren er logget inn
-if (!isset($_SESSION['lecturer_id'])) {
-    die("Du må logge inn for å se denne siden.");
 }
 
 // Simulert melding (kan erstattes med database)
