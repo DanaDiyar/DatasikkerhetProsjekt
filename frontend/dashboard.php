@@ -5,7 +5,7 @@ if (!isset($_SESSION['logged_in'])) {
     exit();
 }
 
-// Emner (dummy data, erstatt med database)
+// Emneliste (dummy data, kan erstattes med en database)
 $subjects = [
     1 => "Matematikk",
     2 => "Programmering",
@@ -18,7 +18,6 @@ if (isset($_POST['send_message'])) {
     $subject_id = $_POST['subject_id'];
     $message_text = htmlspecialchars($_POST['message_text']);
 
-    // Lagre meldingen anonymt (her lagret i session for enkelhet)
     $_SESSION['messages'][] = [
         'subject' => $subjects[$subject_id],
         'message' => $message_text
@@ -32,12 +31,11 @@ if (isset($_POST['send_message'])) {
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
 </head>
 <body>
     <h1>Velkommen, <?= htmlspecialchars($_SESSION['student_name']) ?>!</h1>
-    
+
     <h2>Send anonym melding</h2>
     <form method="post">
         Velg emne:
