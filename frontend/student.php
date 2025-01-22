@@ -14,12 +14,22 @@ session_start();
     <form method="post">
         Navn: <input type="text" name="name" required><br>
         E-post: <input type="email" name="email" required><br>
+        Studieretning: <input type="text" name="study_program" required><br>
+        Studiekull: <input type="number" name="year" required><br>
         <input type="submit" name="register" value="Registrer">
     </form>
 
     <?php
     if (isset($_POST['register'])) {
-        echo "<p>Registrering vellykket for: " . htmlspecialchars($_POST['name']) . " med e-post: " . htmlspecialchars($_POST['email']) . "</p>";
+        $name = htmlspecialchars($_POST['name']);
+        $email = htmlspecialchars($_POST['email']);
+        $study_program = htmlspecialchars($_POST['study_program']);
+        $year = htmlspecialchars($_POST['year']);
+
+        echo "<p>Registrering vellykket for: $name</p>";
+        echo "<p>E-post: $email</p>";
+        echo "<p>Studieretning: $study_program</p>";
+        echo "<p>Studiekull: $year</p>";
     }
     ?>
 </body>
