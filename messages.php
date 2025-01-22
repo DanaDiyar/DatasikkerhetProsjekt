@@ -13,7 +13,7 @@ $messages = [
 if ($message_id && isset($messages[$message_id])) {
     $message_content = $messages[$message_id];
 } else {
-    die("Meldingen finnes ikke.");
+    die("Du har ikke fått noen meldinger enda Taper.");
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
