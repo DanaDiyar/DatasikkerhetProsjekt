@@ -1,39 +1,5 @@
 <?php
 session_start();
-require 'db.php';  // Sørg for at db.php inneholder riktig tilkobling til databasen
-
-$errors = [];
-$success = "";
-
-// Registrering av bruker (navn og e-post)
-if (isset($_POST['register'])) {
-    $name = $_POST['name'];
-    $email = $_POST['email'];
-
-    $stmt = $pdo->prepare("INSERT INTO students (name, email) VALUES (?, ?)");
-    if ($stmt->execute([$name, $email])) {
-        $success = "Registrering vellykket!";
-    } else {
-        $errors[] = "Feil ved registrering.";
-    }
-}
-
-// Innlogging med e-post
-if (isset($_POST['login'])) {
-    $email = $_POST['email'];
-
-    $stmt = $pdo->prepare("SELECT * FROM students WHERE email = ?");
-    $stmt->execute([$email]);
-    $student = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($student) {
-        $_SESSION['student_name'] = $student['name'];
-        header("Location: welcome.php");
-        exit();
-    } else {
-        $errors[] = "E-post ikke funnet.";
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -41,7 +7,20 @@ if (isset($_POST['login'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enkel Studentportal</title>
+    <title>Testside</title>
 </head>
 <body>
-    <h1>Enkel Studentportal
+    <h1>Velkommen til Studentportalen</h1>
+    <form method="post">
+        Navn: <input type="text" name="name" required><br>
+        E-post: <input type="email" name="email" required><br>
+        <input type="submit" name="register" value="Registrer">
+    </form>
+
+    <?php
+    if (isset($_POST['register'])) {
+        echo "<p>Registrering vellykket for: " . htmlspecialchars($_POST['name']) . " med e-post: " . htmlspecialchars($_POST['email']) . "</p>";
+    }
+    ?>
+</body>
+</html>
