@@ -3,6 +3,14 @@ function sanitize($data) {
     return htmlspecialchars(strip_tags(trim($data)));
 }
 
+function hashPassword($password) {
+    return password_hash($password, PASSWORD_BCRYPT);
+}
+
+function verifyPassword($password, $hash) {
+    return password_verify($password, $hash);
+}
+
 // Simulerte meldinger (kan erstattes med database)
 $messages = [
     ["id" => 1, "content" => "Hvordan kan jeg forbedre koden min?"],
@@ -10,19 +18,26 @@ $messages = [
 ];
 
 // Simulert lagret passord-hash (erstatt med database)
-$fake_password_hash = password_hash("password123", PASSWORD_BCRYPT);
+$fake_password_hash = hashPassword("password123");
 
 // Håndtering av passordbytte
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
     $old_password = sanitize($_POST['old_password']);
     $new_password = sanitize($_POST['new_password']);
 
-    if (password_verify($old_password, $fake_password_hash)) {
-        $new_password_hash = password_hash($new_password, PASSWORD_BCRYPT);
+    if (verifyPassword($old_password, $fake_password_hash)) {
+        $new_password_hash = hashPassword($new_password);
         echo "<p style='color: green;'>Passordet er endret!</p>";
     } else {
         echo "<p style='color: red;'>Gammelt passord er feil.</p>";
     }
+}
+
+// Håndtering av svar på meldinger
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
+    $message_id = sanitize($_POST['message_id']);
+    $reply = sanitize($_POST['reply']);
+    echo "<p style='color: green;'>Svar sendt for melding #$message_id: $reply</p>";
 }
 ?>
 
@@ -33,8 +48,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
 <ul>
     <?php foreach ($messages as $message): ?>
         <li>
-            <?= sanitize($message['content']) ?>
-            <a href="messages.php?message_id=<?= $message['id'] ?>">Svar</a>
+            <strong>Melding #<?= $message['id'] ?>:</strong> <?= sanitize($message['content']) ?>
+            <!-- Knapp for å svare på melding -->
+            <button onclick="document.getElementById('reply-form-<?= $message['id'] ?>').style.display='block'">Svar</button>
+            <!-- Skjema for å svare på melding -->
+            <div id="reply-form-<?= $message['id'] ?>" style="display: none; margin-top: 10px;">
+                <form method="POST">
+                    <input type="hidden" name="message_id" value="<?= $message['id'] ?>">
+                    <textarea name="reply" placeholder="Skriv svaret ditt her..." required></textarea>
+                    <button type="submit">Send svar</button>
+                </form>
+            </div>
         </li>
     <?php endforeach; ?>
 </ul>
