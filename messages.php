@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'includes/functions.php';
+require 'functions.php';
 
 if (!isset($_SESSION['lecturer_id'])) {
     echo "Du må logge inn for å se denne siden.";
