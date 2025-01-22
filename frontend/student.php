@@ -5,13 +5,15 @@ require 'db.php';  // Sørg for at denne filen inneholder riktig databaseforbind
 $errors = [];
 $success = "";
 
-// Registrering av student (kun navn og e-post for enkel testing)
+// Registrering av student
 if (isset($_POST['register'])) {
-    $name = trim($_POST['name']);
-    $email = trim($_POST['email']);
+    $name = $_POST['name'];
+    $email = $_POST['email'];
+    $study_program = $_POST['study_program'];
+    $year = $_POST['year'];
 
-    $stmt = $pdo->prepare("INSERT INTO students (name, email) VALUES (?, ?)");
-    if ($stmt->execute([$name, $email])) {
+    $stmt = $pdo->prepare("INSERT INTO students (name, email, study_program, year) VALUES (?, ?, ?, ?)");
+    if ($stmt->execute([$name, $email, $study_program, $year])) {
         $success = "Registrering vellykket!";
     } else {
         $errors[] = "Feil ved registrering.";
@@ -20,7 +22,7 @@ if (isset($_POST['register'])) {
 
 // Innlogging
 if (isset($_POST['login'])) {
-    $email = trim($_POST['email']);
+    $email = $_POST['email'];
 
     $stmt = $pdo->prepare("SELECT * FROM students WHERE email = ?");
     $stmt->execute([$email]);
@@ -75,6 +77,8 @@ if (isset($_POST['send_message'])) {
     <form method="post">
         Navn: <input type="text" name="name" required><br>
         E-post: <input type="email" name="email" required><br>
+        Studieretning: <input type="text" name="study_program" required><br>
+        Studiekull: <input type="number" name="year" required><br>
         <input type="submit" name="register" value="Registrer">
     </form>
 
@@ -98,6 +102,5 @@ if (isset($_POST['send_message'])) {
         Melding: <textarea name="message_text" required></textarea><br>
         <input type="submit" name="send_message" value="Send melding">
     </form>
-
 </body>
 </html>
