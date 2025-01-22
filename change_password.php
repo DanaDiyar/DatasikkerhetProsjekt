@@ -1,24 +1,33 @@
 <?php
 session_start();
-require 'functions.php';
+
+function sanitize($data) {
+    return htmlspecialchars(strip_tags(trim($data)));
+}
+
+function hashPassword($password) {
+    return password_hash($password, PASSWORD_BCRYPT);
+}
+
+function verifyPassword($password, $hash) {
+    return password_verify($password, $hash);
+}
 
 if (!isset($_SESSION['lecturer_id'])) {
-    echo "Du må logge inn for å endre passord.";
-    exit();
+    die("Du må logge inn for å endre passord.");
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $old_password = sanitize($_POST['old_password']);
     $new_password = sanitize($_POST['new_password']);
 
-    // Simulated password check
     $fake_password_hash = hashPassword("password123");
 
     if (verifyPassword($old_password, $fake_password_hash)) {
         $new_password_hash = hashPassword($new_password);
-        echo "Passord endret (Simulert uten database).";
+        echo "Passord endret! (Simulert uten database)";
     } else {
-        echo "Feil gammelt passord.";
+        echo "Gammelt passord er feil.";
     }
 }
 ?>

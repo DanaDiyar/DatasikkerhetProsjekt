@@ -1,14 +1,16 @@
 <?php
-require 'functions.php';
+function sanitize($data) {
+    return htmlspecialchars(strip_tags(trim($data)));
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = sanitize($_POST['email']);
 
-    // Simulated email check
+    // Simulert e-postsjekk
     $fake_email = "lecturer@example.com";
 
     if ($email === $fake_email) {
-        echo "Instruksjoner for tilbakestilling sendt til $email (Simulert).";
+        echo "Instruksjoner for tilbakestilling sendt til $email.";
     } else {
         echo "E-post ikke funnet.";
     }

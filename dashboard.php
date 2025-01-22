@@ -1,13 +1,15 @@
 <?php
 session_start();
-require 'functions.php';
 
-if (!isset($_SESSION['lecturer_id'])) {
-    echo "Du må logge inn for å se denne siden.";
-    exit();
+function sanitize($data) {
+    return htmlspecialchars(strip_tags(trim($data)));
 }
 
-// Simulated messages
+if (!isset($_SESSION['lecturer_id'])) {
+    die("Du må logge inn for å se denne siden.");
+}
+
+// Simulerte meldinger
 $messages = [
     ["id" => 1, "content" => "Hvordan kan jeg forbedre koden min?"],
     ["id" => 2, "content" => "Kan du forklare mer om sikkerhet?"]
@@ -19,7 +21,7 @@ $messages = [
 <ul>
     <?php foreach ($messages as $message): ?>
         <li>
-            <?= $message['content'] ?>
+            <?= sanitize($message['content']) ?>
             <a href="messages.php?message_id=<?= $message['id'] ?>">Svar</a>
         </li>
     <?php endforeach; ?>

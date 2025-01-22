@@ -1,11 +1,20 @@
 <?php
-require 'functions.php';
+function sanitize($data) {
+    return htmlspecialchars(strip_tags(trim($data)));
+}
+
+function hashPassword($password) {
+    return password_hash($password, PASSWORD_BCRYPT);
+}
+
+function verifyPassword($password, $hash) {
+    return password_verify($password, $hash);
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = sanitize($_POST['email']);
     $password = sanitize($_POST['password']);
 
-    // Simulated database validation
     $fake_password_hash = hashPassword("password123");
     $fake_email = "lecturer@example.com";
 

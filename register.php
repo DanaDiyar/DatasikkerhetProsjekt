@@ -1,27 +1,40 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// Funksjoner direkte i filen
+function sanitize($data) {
+    return htmlspecialchars(strip_tags(trim($data)));
+}
 
-require 'functions.php';
+function hashPassword($password) {
+    return password_hash($password, PASSWORD_BCRYPT);
+}
 
+// Håndtering av registrering
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = sanitize($_POST['name']);
-    $email = sanitize($_POST['email']);
+    $email = filter_var($_POST['email'], FILTER_VALIDATE_EMAIL);
     $password = sanitize($_POST['password']);
     $subject = sanitize($_POST['subject']);
     $pin_code = sanitize($_POST['pin_code']);
     $profile_image = $_FILES['profile_image'];
 
-    // Hash password
+    if (!$email) {
+        die("Ugyldig e-postadresse.");
+    }
+
+    // Hash passord
     $password_hash = hashPassword($password);
 
-    // Handle image upload
-    $image_path = 'uploads/' . basename($profile_image['name']);
+    // Sikker bildeopplasting
+    $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!in_array($profile_image['type'], $allowed_types)) {
+        die("Kun JPEG, PNG og GIF-bilder er tillatt.");
+    }
+
+    $image_path = 'uploads/' . uniqid() . '_' . basename($profile_image['name']);
     if (move_uploaded_file($profile_image['tmp_name'], $image_path)) {
-        echo "Registrering vellykket (oppdater med database senere).";
+        echo "Registrering vellykket! (Oppdater med database senere)";
     } else {
-        echo "Feil ved opplasting av bildet.";
+        die("Feil ved opplasting av bildet.");
     }
 }
 ?>

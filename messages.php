@@ -1,17 +1,19 @@
 <?php
 session_start();
-require 'functions.php';
 
-if (!isset($_SESSION['lecturer_id'])) {
-    echo "Du må logge inn for å se denne siden.";
-    exit();
+function sanitize($data) {
+    return htmlspecialchars(strip_tags(trim($data)));
 }
 
-$message_id = $_GET['message_id'] ?? null;
+if (!isset($_SESSION['lecturer_id'])) {
+    die("Du må logge inn for å se denne siden.");
+}
+
+$message_id = isset($_GET['message_id']) ? sanitize($_GET['message_id']) : null;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $reply = sanitize($_POST['reply']);
-    echo "Svar sendt: $reply (Simulert uten database)";
+    echo "Svar sendt: " . $reply . " (Simulert uten database)";
 }
 ?>
 
