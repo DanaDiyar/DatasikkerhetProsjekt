@@ -22,6 +22,6 @@ if (isset($users[$username]) && $users[$username] === $password) {
     // Feilmelding ved feil brukernavn eller passord
     echo "<h2>Login Failed</h2>";
     echo "Incorrect username or password.";
-    echo "<br><a href='index.php'>Go back to Login Page</a>";
+    echo "<br><a href='Login.php'>Go back to Login Page</a>";
 }
 ?>
