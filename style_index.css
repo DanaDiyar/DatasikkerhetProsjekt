@@ -1,16 +1,16 @@
 .btn {
   display: inline-block;
   padding: 10px 20px;
-  background-color: #4CAF50; /* Grønnfarge */
+  background-color: #6c757d; /* Gråfarge */
   color: #fff;
   text-decoration: none;
   border-radius: 4px;
   font-family: sans-serif;
   font-size: 16px;
-  transition: background-color 0.3s; /* Mykere overgang ved hover */
+  transition: background-color 0.3s; /* Jevn overgang ved hover */
 }
 
 .btn:hover {
-  background-color: #45A049; /* Litt mørkere grønn ved hover */
+  background-color: #5a6268; /* Litt mørkere grå ved hover */
   text-decoration: none;
 }
