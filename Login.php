@@ -20,6 +20,7 @@ if (isset($_POST['register_student'])) {
         'email' => $email,
         'study_program' => $study_program,
         'year' => $year,
+        'password' => 'student123', // Standard passord for demo
     ];
 
     $success = "Student registrert: $name ($email)";
@@ -33,7 +34,6 @@ if (isset($_POST['register_lecturer'])) {
     $pin_code = htmlspecialchars($_POST['pin_code']);
     $image = $_FILES['lecturer_image'];
 
-    // Håndtere bildeopplasting
     $imagePath = 'uploads/' . basename($image['name']);
     if (move_uploaded_file($image['tmp_name'], $imagePath)) {
         $_SESSION['users']['lecturers'][$email] = [
@@ -43,13 +43,7 @@ if (isset($_POST['register_lecturer'])) {
             'subject' => $subject,
             'pin_code' => $pin_code,
             'image' => $imagePath,
-        ];
-
-        // Opprett emne
-        $_SESSION['subjects'][$subject] = [
-            'subject' => $subject,
-            'pin_code' => $pin_code,
-            'lecturer' => $name,
+            'password' => 'lecturer123', // Standard passord for demo
         ];
 
         $success = "Foreleser registrert: $name ($email), Emne: $subject med PIN-kode.";
@@ -73,6 +67,27 @@ if (isset($_POST['login'])) {
         exit();
     } else {
         $error = "E-post ikke funnet. Vennligst registrer deg først.";
+    }
+}
+
+// Håndtering av glemt passord
+if (isset($_POST['forgot_password'])) {
+    $email = htmlspecialchars($_POST['email']);
+    $role = htmlspecialchars($_POST['role']); // 'student' eller 'lecturer'
+
+    $user = null;
+    if ($role === 'student' && isset($_SESSION['users']['students'][$email])) {
+        $user = $_SESSION['users']['students'][$email];
+    } elseif ($role === 'lecturer' && isset($_SESSION['users']['lecturers'][$email])) {
+        $user = $_SESSION['users']['lecturers'][$email];
+    }
+
+    if ($user) {
+        $newPassword = "newPass" . rand(1000, 9999); // Generer et midlertidig passord
+        $_SESSION['users'][$role . 's'][$email]['password'] = $newPassword;
+        $success = "Nytt passord for $email er: $newPassword";
+    } else {
+        $error = "E-post ikke funnet.";
     }
 }
 ?>
@@ -124,6 +139,17 @@ if (isset($_POST['login'])) {
             <option value="lecturer">Foreleser</option>
         </select><br>
         <button type="submit" name="login">Logg inn</button>
+    </form>
+
+    <h2>Glemt Passord</h2>
+    <form method="post">
+        E-post: <input type="email" name="email" required><br>
+        Rolle:
+        <select name="role" required>
+            <option value="student">Student</option>
+            <option value="lecturer">Foreleser</option>
+        </select><br>
+        <button type="submit" name="forgot_password">Glemt Passord</button>
     </form>
 </body>
 </html>
