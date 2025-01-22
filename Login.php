@@ -1,3 +1,12 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal for Studenter og Forelesere</title>
+    <link rel="stylesheet" href="style.css"> <!-- Kobling til CSS -->
+</head>
+<body>
 <?php
 session_start();
 
@@ -124,17 +133,6 @@ if (isset($_POST['forgot_password'])) {
     E-post: <input type="email" name="email" required><br>
     Passord: <input type="password" name="password" required><br>
     Rolle:
-    <select name="role" required>
-        <option value="student">Student</option>
-        <option value="lecturer">Foreleser</option>
-    </select><br>
-    <button type="submit" name="login">Logg inn</button>
-</form>
-<h2>Logg inn</h2>
-<form method="post">
-    E-post: <input type="email" name="email" required><br>
-    Passord: <input type="password" name="password" required><br>
-    Rolle:
     <select name="role" id="role-select" required>
         <option value="">Velg rolle</option>
         <option value="student">Student</option>
@@ -165,3 +163,5 @@ if (isset($_POST['forgot_password'])) {
         }
     });
 </script>
+</body>
+</html>
