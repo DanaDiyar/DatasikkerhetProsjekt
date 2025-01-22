@@ -97,3 +97,36 @@ if (isset($_POST['forgot_password'])) {
     }
 }
 ?>
+<h2>Registrering for Studenter</h2>
+<form method="post">
+    Navn: <input type="text" name="student_name" required><br>
+    E-post: <input type="email" name="student_email" required><br>
+    Studieretning: <input type="text" name="study_program" required><br>
+    Studiekull: <input type="number" name="student_year" required><br>
+    Passord: <input type="password" name="student_password" required><br>
+    <button type="submit" name="register_student">Registrer Student</button>
+</form>
+
+<h2>Registrering for Forelesere</h2>
+<form method="post" enctype="multipart/form-data">
+    Navn: <input type="text" name="lecturer_name" required><br>
+    E-post: <input type="email" name="lecturer_email" required><br>
+    Institutt: <input type="text" name="department" required><br>
+    Emne: <input type="text" name="subject" required><br>
+    PIN-kode: <input type="text" name="pin_code" required><br>
+    Passord: <input type="password" name="lecturer_password" required><br>
+    Bilde: <input type="file" name="lecturer_image" accept="image/*" required><br>
+    <button type="submit" name="register_lecturer">Registrer Foreleser</button>
+</form>
+
+<h2>Logg inn</h2>
+<form method="post">
+    E-post: <input type="email" name="email" required><br>
+    Passord: <input type="password" name="password" required><br>
+    Rolle:
+    <select name="role" required>
+        <option value="student">Student</option>
+        <option value="lecturer">Foreleser</option>
+    </select><br>
+    <button type="submit" name="login">Logg inn</button>
+</form>
