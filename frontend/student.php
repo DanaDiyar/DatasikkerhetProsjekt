@@ -1,8 +1,6 @@
-
 <?php
 session_start();
-<link rel="stylesheet" type="text/css" href="stylestudent.css"> // ❌ Feil plassering
-?>
+
 // Emneliste (dummy data, kan erstattes med en database)
 $subjects = [
     1 => "Emne 1",
@@ -31,6 +29,7 @@ if (isset($_POST['send_message'])) {
 <head>
     <meta charset="UTF-8">
     <title>Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="stylestudent.css">
 </head>
 <body>
     <h1>Velkommen!</h1>
