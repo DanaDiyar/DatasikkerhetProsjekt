@@ -41,7 +41,7 @@ if (isset($_POST['send_message'])) {
             <?php endforeach; ?>
         </select><br>
         Melding: <textarea name="message_text" required></textarea><br>
-        <input type="submit" name="send_message" value="Send melding">
+        <input type="submit" name="send_message" value="Send anonym meldingen">
     </form>
 
     <?php if (isset($success)): ?>
