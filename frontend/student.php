@@ -28,5 +28,10 @@ session_start();
         <br><br>
         <button type="submit">Send anonym melding</button>
     </form>
+    
+    <h2>Sendte meldinger</h2>
+    <div id="comments">
+        <p>Ingen meldinger sendt ennå.</p>
+    </div>
 </body>
 </html>
