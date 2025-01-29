@@ -1,6 +1,8 @@
+
 <?php
 session_start();
-<link rel="stylesheet" type="text/css" href="stylestudent.css">
+<link rel="stylesheet" type="text/css" href="stylestudent.css"> // ❌ Feil plassering
+?>
 // Emneliste (dummy data, kan erstattes med en database)
 $subjects = [
     1 => "Emne 1",
