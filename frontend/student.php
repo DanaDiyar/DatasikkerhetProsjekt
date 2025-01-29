@@ -3,10 +3,11 @@ session_start();
 
 // Emneliste (dummy data, kan erstattes med en database)
 $subjects = [
-    1 => "Matematikk",
-    2 => "Programmering",
-    3 => "Databaser",
-    4 => "Maskinlæring"
+    1 => "Emne 1",
+    2 => "Emne 2",
+    3 => "Emne 3",
+    4 => "Emne 4"
+     4 => "Emne 5"
 ];
 
 // Håndtering av anonym melding
