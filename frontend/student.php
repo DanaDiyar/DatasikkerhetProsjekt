@@ -7,7 +7,7 @@ $subjects = [
     2 => "Emne 2",
     3 => "Emne 3",
     4 => "Emne 4"
-     4 => "Emne 5"
+    
 ];
 
 // Håndtering av anonym melding
