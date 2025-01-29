@@ -1,8 +1,8 @@
 <?php
-$host = 'localhost'; // Eller IP-adressen til databasen
+$host = '127.0.0.1'; // Endret fra 'localhost' til '127.0.0.1'
 $dbname = 'foreleser_system';
 $username = 'root'; // Sett ditt MySQL-brukernavn
-$password = ''; // Sett passordet ditt (hvis det er satt)
+$password = ''; // Sett ditt MySQL-passord
 
 try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
