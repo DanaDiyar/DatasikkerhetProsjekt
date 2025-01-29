@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Gjesteside</title>
-  <link rel="stylesheet" href="style_index.css">
+    <link rel="stylesheet" href="style_index.css">
 </head>
 <body>
 
@@ -11,6 +11,7 @@
 
     <p><a href="login.php" class="btn">Logg inn</a> (for studenter/forelesere)</p>
 
+    <!-- Skjema for å oppgi emnekode og PIN-kode -->
     <form method="post">
         Emnekode: <input type="text" name="subject_code" required>
         PIN-kode: <input type="password" name="pin_code" required maxlength="4">
@@ -18,7 +19,11 @@
     </form>
     <hr> 
 
-    <?php if ($subjectInfo): ?>
+    <!-- 
+         Viser emneinfo, meldinger, svar og kommentarer 
+         KUN dersom skjemaet er POSTET og subjectInfo er satt 
+    -->
+    <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && $subjectInfo): ?>
         <h2><?= htmlspecialchars($subjectInfo['subject_code']) ?> - <?= htmlspecialchars($subjectInfo['subject_name']) ?></h2>
         <?php
         // Hent foreleser-info
@@ -42,7 +47,10 @@
                 
                 <?php
                 // Hent kommentarer til denne meldingen
-                $stmtComm = $pdo->prepare("SELECT comment_text, created_at FROM comments WHERE message_id = ? ORDER BY created_at DESC");
+                $stmtComm = $pdo->prepare("SELECT comment_text, created_at 
+                                           FROM comments 
+                                           WHERE message_id = ? 
+                                           ORDER BY created_at DESC");
                 $stmtComm->execute([$msg['id']]);
                 $comments = $stmtComm->fetchAll(PDO::FETCH_ASSOC);
                 ?>
