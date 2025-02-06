@@ -1,11 +1,11 @@
 <?php
 session_start();
-require 'db_connect.php'; // Koble til databasen
+require 'db_connect.php'; // Kobling til databasen
 
 $success = "";
 $error = "";
 
-// Registrering av bruker
+// Behandle skjemaet når det sendes
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     $name = htmlspecialchars($_POST['name']);
     $email = htmlspecialchars($_POST['email']);
@@ -14,15 +14,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     $study_program = isset($_POST['study_program']) ? htmlspecialchars($_POST['study_program']) : NULL;
     $year = isset($_POST['year']) ? htmlspecialchars($_POST['year']) : NULL;
 
-    // Håndtering av bildeopplasting (valgfritt)
+    // Håndtering av bildeopplasting for forelesere
     $imagePath = NULL;
-    if (isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
+    if ($role === "foreleser" && isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
         $uploadDir = "uploads/";
         $imagePath = $uploadDir . basename($_FILES["image"]["name"]);
         move_uploaded_file($_FILES["image"]["tmp_name"], $imagePath);
     }
 
-    // Sjekk om e-post allerede finnes
+    // Sjekk om e-posten allerede finnes
     $check_email = $conn->prepare("SELECT * FROM brukere WHERE e_post = ?");
     $check_email->bind_param("s", $email);
     $check_email->execute();
@@ -34,34 +34,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
         // Sett inn bruker i databasen
         $stmt = $conn->prepare("INSERT INTO brukere (navn, e_post, passord_hash, rolle, bilde, studieretning, studiekull) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("sssssss", $name, $email, $password, $role, $imagePath, $study_program, $year);
-        
         if ($stmt->execute()) {
             $success = "Bruker registrert: $name ($email) som $role";
         } else {
             $error = "Feil ved registrering: " . $stmt->error;
         }
-    }
-}
-
-// Håndtering av innlogging
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
-    $email = htmlspecialchars($_POST['email']);
-    $password = $_POST['password'];
-
-    // Hent bruker fra databasen
-    $stmt = $conn->prepare("SELECT * FROM brukere WHERE e_post = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
-
-    if ($user && password_verify($password, $user['passord_hash'])) {
-        $_SESSION['user_name'] = $user['navn'];
-        $_SESSION['role'] = $user['rolle'];
-        header("Location: dashboard.php");
-        exit();
-    } else {
-        $error = "Feil e-post eller passord.";
     }
 }
 ?>
@@ -71,44 +48,70 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studentportal</title>
+    <title>Registrering</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+    <script>
+        function toggleFields() {
+            const role = document.getElementById("role").value;
+            const studentFields = document.getElementById("student-fields");
+            const lecturerFields = document.getElementById("lecturer-fields");
+
+            if (role === "student") {
+                studentFields.style.display = "block";
+                lecturerFields.style.display = "none";
+            } else if (role === "foreleser") {
+                studentFields.style.display = "none";
+                lecturerFields.style.display = "block";
+            } else {
+                studentFields.style.display = "none";
+                lecturerFields.style.display = "none";
+            }
+        }
+    </script>
 </head>
 <body>
     <h2>Registrering</h2>
     <form method="post" enctype="multipart/form-data">
-        Navn: <input type="text" name="name" required><br>
-        E-post: <input type="email" name="email" required><br>
-        Rolle:
-        <select name="role" required>
+        <label for="name">Navn:</label>
+        <input type="text" name="name" id="name" required><br>
+
+        <label for="email">E-post:</label>
+        <input type="email" name="email" id="email" required><br>
+
+        <label for="role">Rolle:</label>
+        <select name="role" id="role" onchange="toggleFields()" required>
+            <option value="">Velg rolle</option>
             <option value="student">Student</option>
             <option value="foreleser">Foreleser</option>
         </select><br>
-        Studieretning (kun for studenter): <input type="text" name="study_program"><br>
-        Studiekull (kun for studenter): <input type="number" name="year"><br>
-        Passord: <input type="password" name="password" required><br>
-        Profilbilde (valgfritt): <input type="file" name="image" accept="image/*"><br>
-        <button type="submit" name="register">Registrer</button>
-    </form>
 
-    <h2>Logg inn</h2>
-    <form method="post">
-        E-post: <input type="email" name="email" required><br>
-        Passord: <input type="password" name="password" required><br>
-        <button type="submit" name="login">Logg inn</button>
+        <!-- Felter for studenter -->
+        <div id="student-fields" class="hidden">
+            <label for="study_program">Studieretning:</label>
+            <input type="text" name="study_program" id="study_program"><br>
+
+            <label for="year">Studiekull:</label>
+            <input type="number" name="year" id="year"><br>
+        </div>
+
+        <!-- Felter for forelesere -->
+        <div id="lecturer-fields" class="hidden">
+            <label for="image">Profilbilde:</label>
+            <input type="file" name="image" id="image" accept="image/*"><br>
+        </div>
+
+        <label for="password">Passord:</label>
+        <input type="password" name="password" id="password" required><br>
+
+        <button type="submit" name="register">Registrer</button>
     </form>
 
     <?php if ($error) echo "<p style='color: red;'>$error</p>"; ?>
     <?php if ($success) echo "<p style='color: green;'>$success</p>"; ?>
-
-    <h2>Registrerte brukere</h2>
-    <?php
-    $result = $conn->query("SELECT navn, e_post, rolle FROM brukere");
-    echo "<table border='1'><tr><th>Navn</th><th>E-post</th><th>Rolle</th></tr>";
-    while ($row = $result->fetch_assoc()) {
-        echo "<tr><td>{$row['navn']}</td><td>{$row['e_post']}</td><td>{$row['rolle']}</td></tr>";
-    }
-    echo "</table>";
-    ?>
 </body>
 </html>
