@@ -1,167 +1,114 @@
-<!DOCTYPE html>
-<html lang="no">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal for Studenter og Forelesere</title>
-    <link rel="stylesheet" href="style.css"> <!-- Kobling til CSS -->
-</head>
-<body>
 <?php
 session_start();
+require 'db_connect.php'; // Koble til databasen
 
-// Dummy database (erstatt med ekte database)
-$users = [
-    'students' => [],
-    'lecturers' => [],
-];
-$subjects = [];
+$success = "";
+$error = "";
 
-// Håndtering av registrering
-if (isset($_POST['register_student'])) {
-    $name = htmlspecialchars($_POST['student_name']);
-    $email = htmlspecialchars($_POST['student_email']);
-    $study_program = htmlspecialchars($_POST['study_program']);
-    $year = htmlspecialchars($_POST['student_year']);
-    $password = password_hash($_POST['student_password'], PASSWORD_DEFAULT); // Hash passord
+// Registrering av bruker
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
+    $name = htmlspecialchars($_POST['name']);
+    $email = htmlspecialchars($_POST['email']);
+    $role = htmlspecialchars($_POST['role']); // 'student' eller 'foreleser'
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $study_program = isset($_POST['study_program']) ? htmlspecialchars($_POST['study_program']) : NULL;
+    $year = isset($_POST['year']) ? htmlspecialchars($_POST['year']) : NULL;
 
-    $_SESSION['users']['students'][$email] = [
-        'name' => $name,
-        'email' => $email,
-        'study_program' => $study_program,
-        'year' => $year,
-        'password' => $password,
-    ];
+    // Håndtering av bildeopplasting (valgfritt)
+    $imagePath = NULL;
+    if (isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
+        $uploadDir = "uploads/";
+        $imagePath = $uploadDir . basename($_FILES["image"]["name"]);
+        move_uploaded_file($_FILES["image"]["tmp_name"], $imagePath);
+    }
 
-    $success = "Student registrert: $name ($email)";
-}
+    // Sjekk om e-post allerede finnes
+    $check_email = $conn->prepare("SELECT * FROM brukere WHERE e_post = ?");
+    $check_email->bind_param("s", $email);
+    $check_email->execute();
+    $result = $check_email->get_result();
 
-if (isset($_POST['register_lecturer'])) {
-    $name = htmlspecialchars($_POST['lecturer_name']);
-    $email = htmlspecialchars($_POST['lecturer_email']);
-    $department = htmlspecialchars($_POST['department']);
-    $subject = htmlspecialchars($_POST['subject']);
-    $pin_code = htmlspecialchars($_POST['pin_code']);
-    $password = password_hash($_POST['lecturer_password'], PASSWORD_DEFAULT); // Hash passord
-    $image = $_FILES['lecturer_image'];
-
-    $imagePath = 'uploads/' . basename($image['name']);
-    if (move_uploaded_file($image['tmp_name'], $imagePath)) {
-        $_SESSION['users']['lecturers'][$email] = [
-            'name' => $name,
-            'email' => $email,
-            'department' => $department,
-            'subject' => $subject,
-            'pin_code' => $pin_code,
-            'image' => $imagePath,
-            'password' => $password,
-        ];
-
-        $success = "Foreleser registrert: $name ($email), Emne: $subject med PIN-kode.";
+    if ($result->num_rows > 0) {
+        $error = "E-postadressen er allerede registrert!";
     } else {
-        $error = "Feil ved opplasting av bildet.";
+        // Sett inn bruker i databasen
+        $stmt = $conn->prepare("INSERT INTO brukere (navn, e_post, passord_hash, rolle, bilde, studieretning, studiekull) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssss", $name, $email, $password, $role, $imagePath, $study_program, $year);
+        
+        if ($stmt->execute()) {
+            $success = "Bruker registrert: $name ($email) som $role";
+        } else {
+            $error = "Feil ved registrering: " . $stmt->error;
+        }
     }
 }
 
 // Håndtering av innlogging
-if (isset($_POST['login'])) {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     $email = htmlspecialchars($_POST['email']);
-    $role = htmlspecialchars($_POST['role']); // 'student' eller 'lecturer'
     $password = $_POST['password'];
 
-    $user = null;
-    if ($role === 'student' && isset($_SESSION['users']['students'][$email])) {
-        $user = $_SESSION['users']['students'][$email];
-    } elseif ($role === 'lecturer' && isset($_SESSION['users']['lecturers'][$email])) {
-        $user = $_SESSION['users']['lecturers'][$email];
-    }
+    // Hent bruker fra databasen
+    $stmt = $conn->prepare("SELECT * FROM brukere WHERE e_post = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
 
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_name'] = $user['name'];
-        header("Location: " . ($role === 'student' ? "student_welcome.php" : "lecturer_welcome.php"));
+    if ($user && password_verify($password, $user['passord_hash'])) {
+        $_SESSION['user_name'] = $user['navn'];
+        $_SESSION['role'] = $user['rolle'];
+        header("Location: dashboard.php");
         exit();
     } else {
         $error = "Feil e-post eller passord.";
     }
 }
-
-// Håndtering av glemt passord
-if (isset($_POST['forgot_password'])) {
-    $email = htmlspecialchars($_POST['email']);
-    $role = htmlspecialchars($_POST['role']); // 'student' eller 'lecturer'
-
-    $user = null;
-    if ($role === 'student' && isset($_SESSION['users']['students'][$email])) {
-        $user = $_SESSION['users']['students'][$email];
-    } elseif ($role === 'lecturer' && isset($_SESSION['users']['lecturers'][$email])) {
-        $user = $_SESSION['users']['lecturers'][$email];
-    }
-
-    if ($user) {
-        $newPassword = "newPass" . rand(1000, 9999); // Generer et midlertidig passord
-        $_SESSION['users'][$role . 's'][$email]['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
-        $success = "Nytt passord for $email er: $newPassword";
-    } else {
-        $error = "E-post ikke funnet.";
-    }
-}
 ?>
-<h2>Registrering for Studenter</h2>
-<form method="post">
-    Navn: <input type="text" name="student_name" required><br>
-    E-post: <input type="email" name="student_email" required><br>
-    Studieretning: <input type="text" name="study_program" required><br>
-    Studiekull: <input type="number" name="student_year" required><br>
-    Passord: <input type="password" name="student_password" required><br>
-    <button type="submit" name="register_student">Registrer Student</button>
-</form>
 
-<h2>Registrering for Forelesere</h2>
-<form method="post" enctype="multipart/form-data">
-    Navn: <input type="text" name="lecturer_name" required><br>
-    E-post: <input type="email" name="lecturer_email" required><br>
-    Institutt: <input type="text" name="department" required><br>
-    Emne: <input type="text" name="subject" required><br>
-    PIN-kode: <input type="text" name="pin_code" required><br>
-    Passord: <input type="password" name="lecturer_password" required><br>
-    Bilde: <input type="file" name="lecturer_image" accept="image/*" required><br>
-    <button type="submit" name="register_lecturer">Registrer Foreleser</button>
-</form>
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studentportal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>Registrering</h2>
+    <form method="post" enctype="multipart/form-data">
+        Navn: <input type="text" name="name" required><br>
+        E-post: <input type="email" name="email" required><br>
+        Rolle:
+        <select name="role" required>
+            <option value="student">Student</option>
+            <option value="foreleser">Foreleser</option>
+        </select><br>
+        Studieretning (kun for studenter): <input type="text" name="study_program"><br>
+        Studiekull (kun for studenter): <input type="number" name="year"><br>
+        Passord: <input type="password" name="password" required><br>
+        Profilbilde (valgfritt): <input type="file" name="image" accept="image/*"><br>
+        <button type="submit" name="register">Registrer</button>
+    </form>
 
-<h2>Logg inn</h2>
-<form method="post">
-    E-post: <input type="email" name="email" required><br>
-    Passord: <input type="password" name="password" required><br>
-    Rolle:
-    <select name="role" id="role-select" required>
-        <option value="">Velg rolle</option>
-        <option value="student">Student</option>
-        <option value="lecturer">Foreleser</option>
-    </select><br>
-    <button type="submit" name="login">Logg inn</button>
-</form>
+    <h2>Logg inn</h2>
+    <form method="post">
+        E-post: <input type="email" name="email" required><br>
+        Passord: <input type="password" name="password" required><br>
+        <button type="submit" name="login">Logg inn</button>
+    </form>
 
-<!-- Glemt passord-knapp -->
-<form method="post" id="forgot-password-form" style="display: none;">
-    <input type="hidden" name="role" id="hidden-role">
-    <input type="hidden" name="email" id="hidden-email">
-    <button type="submit" name="forgot_password">Glemt passord</button>
-</form>
+    <?php if ($error) echo "<p style='color: red;'>$error</p>"; ?>
+    <?php if ($success) echo "<p style='color: green;'>$success</p>"; ?>
 
-<script>
-    // Dynamisk visning av "Glemt passord"-knappen
-    const roleSelect = document.getElementById("role-select");
-    const forgotPasswordForm = document.getElementById("forgot-password-form");
-    const hiddenRoleInput = document.getElementById("hidden-role");
-
-    roleSelect.addEventListener("change", function () {
-        if (roleSelect.value) {
-            hiddenRoleInput.value = roleSelect.value;
-            forgotPasswordForm.style.display = "block";
-        } else {
-            forgotPasswordForm.style.display = "none";
-        }
-    });
-</script>
+    <h2>Registrerte brukere</h2>
+    <?php
+    $result = $conn->query("SELECT navn, e_post, rolle FROM brukere");
+    echo "<table border='1'><tr><th>Navn</th><th>E-post</th><th>Rolle</th></tr>";
+    while ($row = $result->fetch_assoc()) {
+        echo "<tr><td>{$row['navn']}</td><td>{$row['e_post']}</td><td>{$row['rolle']}</td></tr>";
+    }
+    echo "</table>";
+    ?>
 </body>
 </html>
