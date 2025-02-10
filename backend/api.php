@@ -14,11 +14,9 @@ $subjects = [
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === "GET") {
-    // Returnerer liste over emner
     echo json_encode(["subjects" => $subjects]);
     exit;
 } elseif ($method === "POST") {
-    // Lese input-data fra JSON-body
     $input = json_decode(file_get_contents("php://input"), true);
 
     if (!isset($input['subject_id']) || !isset($input['message_text'])) {
@@ -44,7 +42,6 @@ if ($method === "GET") {
     echo json_encode(["success" => "Melding lagret anonymt"]);
     exit;
 } elseif ($method === "DELETE") {
-    // Nullstill meldinger
     $_SESSION['messages'] = [];
     echo json_encode(["success" => "Alle meldinger er slettet"]);
     exit;
