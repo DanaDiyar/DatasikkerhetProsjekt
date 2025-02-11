@@ -24,40 +24,37 @@
          KUN dersom skjemaet er POSTET og subjectInfo er satt 
     -->
     <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && $subjectInfo): ?>
-        <h2><?= htmlspecialchars($subjectInfo['subject_code']) ?> - <?= htmlspecialchars($subjectInfo['subject_name']) ?></h2>
+        <h2><?= htmlspecialchars($subjectInfo['emnekode']) ?> - <?= htmlspecialchars($subjectInfo['emnenavn']) ?></h2>
         <?php
-        // Hent foreleser-info
-        $stmtLect = $pdo->prepare("SELECT name, image_url FROM users WHERE id = ?");
-        $stmtLect->execute([$subjectInfo['lecturer_id']]);
+        // Hent foreleser-info (bruker-tabellen heter nå "brukere" og kolonnene "navn" og "bilde")
+        $stmtLect = $pdo->prepare("SELECT navn, bilde FROM brukere WHERE id = ?");
+        $stmtLect->execute([$subjectInfo['foreleser_id']]);
         $lecturerData = $stmtLect->fetch(PDO::FETCH_ASSOC);
         ?>
-        <p>Foreleser: <?= htmlspecialchars($lecturerData['name']) ?></p>
-        <?php if ($lecturerData['image_url']): ?>
-            <img src="<?= htmlspecialchars($lecturerData['image_url']) ?>" alt="Bilde av foreleser" width="100">
+        <p>Foreleser: <?= htmlspecialchars($lecturerData['navn']) ?></p>
+        <?php if ($lecturerData['bilde']): ?>
+            <img src="<?= htmlspecialchars($lecturerData['bilde']) ?>" alt="Bilde av foreleser" width="100">
         <?php endif; ?>
 
         <hr>
 
         <?php foreach ($messages as $msg): ?>
             <div style="border:1px solid #ccc; margin-bottom:10px; padding:10px;">
-                <p><strong>Melding (anonym):</strong> <?= htmlspecialchars($msg['message_text']) ?></p>
-                <?php if ($msg['reply_text']): ?>
-                    <p><strong>Svar fra foreleser:</strong> <?= htmlspecialchars($msg['reply_text']) ?></p>
+                <p><strong>Melding (anonym):</strong> <?= htmlspecialchars($msg['innhold']) ?></p>
+                <?php if ($msg['svar_innhold']): ?>
+                    <p><strong>Svar fra foreleser:</strong> <?= htmlspecialchars($msg['svar_innhold']) ?></p>
                 <?php endif; ?>
                 
                 <?php
-                // Hent kommentarer til denne meldingen
-                $stmtComm = $pdo->prepare("SELECT comment_text, created_at 
-                                           FROM comments 
-                                           WHERE message_id = ? 
-                                           ORDER BY created_at DESC");
+                // Hent kommentarer til denne meldingen (tabellen "kommentarer" med kolonnene "innhold" og "dato_opprettet")
+                $stmtComm = $pdo->prepare("SELECT innhold, dato_opprettet FROM kommentarer WHERE melding_id = ? ORDER BY dato_opprettet DESC");
                 $stmtComm->execute([$msg['id']]);
                 $comments = $stmtComm->fetchAll(PDO::FETCH_ASSOC);
                 ?>
                 <div style="margin-left:20px;">
                     <strong>Kommentarer:</strong><br>
                     <?php foreach ($comments as $c): ?>
-                        <p>- <?= htmlspecialchars($c['comment_text']) ?> (<?= $c['created_at'] ?>)</p>
+                        <p>- <?= htmlspecialchars($c['innhold']) ?> (<?= $c['dato_opprettet'] ?>)</p>
                     <?php endforeach; ?>
                     <form method="post">
                         <input type="hidden" name="message_id" value="<?= $msg['id'] ?>">
