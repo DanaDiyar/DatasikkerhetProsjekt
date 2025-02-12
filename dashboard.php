@@ -1,5 +1,5 @@
 <?php
-require 'foreleser.php';
+require 'database.php';
 
 // Hent meldinger fra databasen
 $stmt = $conn->prepare("SELECT m.id, m.content, m.created_at, l.email AS lecturer_email 
