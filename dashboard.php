@@ -28,13 +28,14 @@ try {
 // Hent meldinger knyttet til emner foreleseren underviser i
 try {
     $stmt_meldinger = $conn->prepare("
-        SELECT m.id, m.innhold, m.dato_opprettet, b.e_post AS student_email, e.emnenavn 
-        FROM meldinger m
-        JOIN brukere b ON m.student_id = b.id
-        JOIN emner e ON m.emne_id = e.id
-        WHERE e.foreleser_id = ?
-        ORDER BY m.dato_opprettet DESC
-    ");
+    SELECT m.id, m.innhold, m.dato_opprettet, b.e_post AS student_email, e.emnenavn 
+    FROM meldinger m
+    LEFT JOIN brukere b ON m.student_id = b.id  -- Endret til LEFT JOIN
+    JOIN emner e ON m.emne_id = e.id
+    WHERE e.foreleser_id = ?
+    ORDER BY m.dato_opprettet DESC
+");
+
     $stmt_meldinger->bind_param("i", $foreleser_id);
     $stmt_meldinger->execute();
     $meldinger = $stmt_meldinger->get_result()->fetch_all(MYSQLI_ASSOC);
