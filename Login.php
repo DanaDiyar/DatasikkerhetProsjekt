@@ -11,35 +11,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     $email = htmlspecialchars($_POST['email']);
     $role = htmlspecialchars($_POST['role']); // 'student' eller 'foreleser'
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $study_program = isset($_POST['study_program']) ? htmlspecialchars($_POST['study_program']) : NULL;
-    $year = isset($_POST['year']) ? htmlspecialchars($_POST['year']) : NULL;
+    $study_program = ($role === "student" && isset($_POST['study_program']) && !empty($_POST['study_program'])) ? htmlspecialchars($_POST['study_program']) : NULL;
+    $year = ($role === "student" && isset($_POST['year']) && !empty($_POST['year'])) ? $_POST['year'] : NULL;
+
 
     // Håndtering av bildeopplasting for forelesere
-    $imagePath = NULL;
-    if ($role === "foreleser" && isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
-        $uploadDir = "uploads/";
-        $imagePath = $uploadDir . basename($_FILES["image"]["name"]);
-        move_uploaded_file($_FILES["image"]["tmp_name"], $imagePath);
+    $imagePath = NULL; // Standardverdi hvis ingen bilde lastes opp
+
+// Hvis brukeren er en foreleser og laster opp et bilde
+if ($role === "foreleser" && isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
+    $uploadDir = "uploads/";
+    $imagePath = $uploadDir . basename($_FILES["image"]["name"]);
+
+    // Flytt bildet til serveren
+    if (!move_uploaded_file($_FILES["image"]["tmp_name"], $imagePath)) {
+        $error = "Feil ved opplasting av bildet.";
+        error_log("Feil ved opplasting av bildet: " . $_FILES["image"]["error"]);
+        $imagePath = NULL; // Sett bilde til NULL hvis opplastningen feiler
     }
+}
 
-    // Sjekk om e-posten allerede finnes
-    $check_email = $conn->prepare("SELECT * FROM brukere WHERE e_post = ?");
-    $check_email->bind_param("s", $email);
-    $check_email->execute();
-    $result = $check_email->get_result();
+// Sjekk om e-posten allerede finnes i databasen
+$check_email = $conn->prepare("SELECT * FROM brukere WHERE e_post = ?");
+$check_email->bind_param("s", $email);
+$check_email->execute();
+$result = $check_email->get_result();
 
-    if ($result->num_rows > 0) {
-        $error = "E-postadressen er allerede registrert!";
+if ($result->num_rows > 0) {
+    $error = "E-postadressen er allerede registrert!";
+} else {
+    // Sett inn bruker i databasen
+    $stmt = $conn->prepare("INSERT INTO brukere (navn, e_post, passord_hash, rolle, bilde, studieretning, studiekull) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssssss", $name, $email, $password, $role, $imagePath, $study_program, $year);
+
+    if ($stmt->execute()) {
+        $success = "Bruker registrert: $name ($email) som $role";
     } else {
-        // Sett inn bruker i databasen
-        $stmt = $conn->prepare("INSERT INTO brukere (navn, e_post, passord_hash, rolle, bilde, studieretning, studiekull) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssss", $name, $email, $password, $role, $imagePath, $study_program, $year);
-        if ($stmt->execute()) {
-            $success = "Bruker registrert: $name ($email) som $role";
-        } else {
-            $error = "Feil ved registrering: " . $stmt->error;
-        }
+        $error = "Feil ved registrering: " . $stmt->error;
+        error_log("Feil ved registrering: " . $stmt->error);
     }
+}
+
 }
 ?>
 
