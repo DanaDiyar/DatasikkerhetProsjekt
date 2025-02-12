@@ -15,17 +15,29 @@ $foreleser_navn = $_SESSION['user_name'];
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Debugging: Sjekk om sesjonen inneholder riktig data
-// var_dump($_SESSION);
-
-// Hent meldinger fra databasen
+// Hent emner som er opprettet av denne foreleseren
 try {
-    $stmt = $conn->prepare("SELECT m.id, m.innhold, m.dato_opprettet, b.e_post AS bruker_e_post 
-                            FROM meldinger m
-                            JOIN brukere b ON m.student_id = b.id
-                            ORDER BY m.dato_opprettet DESC");
-    $stmt->execute();
-    $messages = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt_emner = $conn->prepare("SELECT id, emnekode, emnenavn FROM emner WHERE foreleser_id = ?");
+    $stmt_emner->bind_param("i", $foreleser_id);
+    $stmt_emner->execute();
+    $emner = $stmt_emner->get_result()->fetch_all(MYSQLI_ASSOC);
+} catch (Exception $e) {
+    die("Feil ved henting av emner: " . $e->getMessage());
+}
+
+// Hent meldinger til emnene foreleseren har opprettet
+try {
+    $stmt_meldinger = $conn->prepare("
+        SELECT m.id, m.innhold, m.dato_opprettet, b.e_post AS student_email, e.emnenavn 
+        FROM meldinger m
+        JOIN brukere b ON m.student_id = b.id
+        JOIN emner e ON m.emne_id = e.id
+        WHERE e.foreleser_id = ?
+        ORDER BY m.dato_opprettet DESC
+    ");
+    $stmt_meldinger->bind_param("i", $foreleser_id);
+    $stmt_meldinger->execute();
+    $meldinger = $stmt_meldinger->get_result()->fetch_all(MYSQLI_ASSOC);
 } catch (Exception $e) {
     die("Feil ved henting av meldinger: " . $e->getMessage());
 }
@@ -63,25 +75,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
 </header>
 
 <div class="container">
-    <h2>Meldinger</h2>
+    <h2>Emnene dine</h2>
     <ul>
-        <?php foreach ($messages as $message): ?>
-            <li>
-                <strong>Melding #<?= $message['id'] ?>:</strong> <?= htmlspecialchars($message['innhold']) ?>
-                <p><small>Sendt av: <?= htmlspecialchars($message['bruker_e_post']) ?></small></p>
-                <button onclick="document.getElementById('reply-form-<?= $message['id'] ?>').style.display='block'">
-                    Svar
-                </button>
-                <!-- Skjema for svar -->
-                <div id="reply-form-<?= $message['id'] ?>" class="reply-form" style="display:none;">
-                    <form method="POST">
-                        <input type="hidden" name="message_id" value="<?= $message['id'] ?>">
-                        <textarea name="reply" placeholder="Skriv svaret ditt her..." required></textarea>
-                        <button type="submit">Send svar</button>
-                    </form>
-                </div>
-            </li>
-        <?php endforeach; ?>
+        <?php if (!empty($emner)): ?>
+            <?php foreach ($emner as $emne): ?>
+                <li><strong><?= htmlspecialchars($emne['emnekode']) ?> - <?= htmlspecialchars($emne['emnenavn']) ?></strong></li>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p>Du har ikke opprettet noen emner ennå.</p>
+        <?php endif; ?>
+    </ul>
+
+    <h2>Meldinger til dine emner</h2>
+    <ul>
+        <?php if (!empty($meldinger)): ?>
+            <?php foreach ($meldinger as $melding): ?>
+                <li>
+                    <strong><?= htmlspecialchars($melding['emnenavn']) ?></strong>
+                    <p>Melding #<?= $melding['id'] ?>: <?= htmlspecialchars($melding['innhold']) ?></p>
+                    <p><small>Sendt av: <?= htmlspecialchars($melding['student_email']) ?> - <?= $melding['dato_opprettet'] ?></small></p>
+                    <button onclick="document.getElementById('reply-form-<?= $melding['id'] ?>').style.display='block'">
+                        Svar
+                    </button>
+                    <!-- Skjema for svar -->
+                    <div id="reply-form-<?= $melding['id'] ?>" class="reply-form" style="display:none;">
+                        <form method="POST">
+                            <input type="hidden" name="message_id" value="<?= $melding['id'] ?>">
+                            <textarea name="reply" placeholder="Skriv svaret ditt her..." required></textarea>
+                            <button type="submit">Send svar</button>
+                        </form>
+                    </div>
+                </li>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p>Ingen meldinger for dine emner ennå.</p>
+        <?php endif; ?>
     </ul>
 
     <?php if (isset($success)) echo "<p style='color: green;'>$success</p>"; ?>
