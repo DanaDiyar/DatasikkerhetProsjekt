@@ -150,6 +150,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
 
         <button type="submit" name="register">Registrer</button>
     </form>
+    <p><a href="glemt_passord.php">Glemt passord?</a></p>
+
 
     <?php if ($error) echo "<p style='color: red;'>$error</p>"; ?>
     <?php if ($success) echo "<p style='color: green;'>$success</p>"; ?>
