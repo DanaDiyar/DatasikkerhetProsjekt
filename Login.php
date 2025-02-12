@@ -93,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
 
             // Omdiriger basert på rolle
             if ($user['rolle'] === "foreleser") {
-                header("Location: foreleser_dashboard.php");
+                header("Location: dashboard.php");
                 exit();
             } else {
                 header("Location: student_dashboard.php");
