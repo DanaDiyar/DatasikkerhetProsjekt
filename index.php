@@ -77,7 +77,7 @@ if (isset($_GET['report'])) {
 
     <h1>Gjest – vis meldinger for emne</h1>
 
-    <p><a href="login.php" class="btn">Logg inn</a> (for studenter/forelesere)</p>
+    <p><a href="Login.php" class="btn">Logg inn</a> (for studenter/forelesere)</p>
 
     <!-- Skjema for å oppgi emnekode og PIN-kode -->
     <form method="post">
