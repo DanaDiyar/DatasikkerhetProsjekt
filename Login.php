@@ -161,6 +161,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     </form>
 
     <p><a href="glemt_passord.php">Glemt passord?</a></p>
+    <p><a href="index.php" class="btn">Gjestebruker</a></p>
 
     <?php if ($error) echo "<p style='color: red;'>$error</p>"; ?>
     <?php if ($success) echo "<p style='color: green;'>$success</p>"; ?>
