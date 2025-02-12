@@ -12,34 +12,44 @@ if ($conn->connect_error) {
     die("Databaseforbindelse feilet: " . $conn->connect_error);
 }
 
-// Hente emner fra databasen
+// Hente emner og deres forelesere fra databasen
 $subjects = [];
-$query = "SELECT id, emnenavn FROM emner";
+$query = "SELECT id, emnenavn, foreleser_id FROM emner";
 $result = $conn->query($query);
 
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $subjects[$row['id']] = $row['emnenavn'];
+        $subjects[$row['id']] = [
+            'name' => $row['emnenavn'],
+            'foreleser_id' => $row['foreleser_id']
+        ];
     }
 } else {
-    $subjects[0] = "Ingen emner funnet";
+    $subjects[0] = ['name' => "Ingen emner funnet", 'foreleser_id' => null];
 }
 
 if (isset($_POST['send_message'])) {
     $subject_id = $_POST['subject_id'];
     $message_text = htmlspecialchars($_POST['message_text']);
+    $student_id = $_SESSION['student_id'] ?? null; // Hent student-ID fra session
 
     if (isset($subjects[$subject_id])) {
-        $stmt = $conn->prepare("INSERT INTO meldinger (subject_id, message) VALUES (?, ?)");
-        $stmt->bind_param("is", $subject_id, $message_text);
+        $foreleser_id = $subjects[$subject_id]['foreleser_id'];
 
-        if ($stmt->execute()) {
-            $success = "Din melding er sendt og lagret i databasen!";
+        if ($foreleser_id) {
+            $stmt = $conn->prepare("INSERT INTO meldinger (emne_id, student_id, innhold) VALUES (?, ?, ?)");
+            $stmt->bind_param("iis", $subject_id, $student_id, $message_text);
+
+            if ($stmt->execute()) {
+                $success = "Din melding er sendt til foreleseren!";
+            } else {
+                $error = "Feil ved sending av melding: " . $conn->error;
+            }
+
+            $stmt->close();
         } else {
-            $error = "Feil ved sending av melding: " . $conn->error;
+            $error = "Ingen foreleser er tilknyttet dette emnet.";
         }
-
-        $stmt->close();
     } else {
         $error = "Ugyldig emne valgt.";
     }
@@ -61,7 +71,7 @@ if (isset($_POST['send_message'])) {
         Velg emne:
         <select name="subject_id" required>
             <?php foreach ($subjects as $id => $subject): ?>
-                <option value="<?= htmlspecialchars($id) ?>"><?= htmlspecialchars($subject) ?></option>
+                <option value="<?= htmlspecialchars($id) ?>"><?= htmlspecialchars($subject['name']) ?></option>
             <?php endforeach; ?>
         </select><br>
         Melding: <textarea name="message_text" required></textarea><br>
