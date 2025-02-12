@@ -62,7 +62,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
     } catch (Exception $e) {
         $error = "Feil ved lagring av svar: " . $e->getMessage();
     }
+
+// Håndtering av passordbytte
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
+    try {
+        $old_password = $_POST['old_password'];
+        $new_password = $_POST['new_password'];
+
+        // Hent brukerens lagrede passord
+        $stmt = $conn->prepare("SELECT passord_hash FROM brukere WHERE id = ?");
+        $stmt->bind_param("i", $foreleser_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+
+        if ($user && password_verify($old_password, $user['passord_hash'])) {
+            // Oppdater passordet
+            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+            $update_stmt = $conn->prepare("UPDATE brukere SET passord_hash = ? WHERE id = ?");
+            $update_stmt->bind_param("si", $hashed_password, $foreleser_id);
+            $update_stmt->execute();
+
+            $success = "Passordet er oppdatert!";
+        } else {
+            $error = "Feil nåværende passord!";
+        }
+    } catch (Exception $e) {
+        $error = "Feil ved oppdatering av passord: " . $e->getMessage();
+    }
 }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -118,6 +148,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
         <?php endif; ?>
     </ul>
 
+     <!-- Knapp for å vise passordendringsskjema -->
+     <h2>Endre passord</h2>
+    <button onclick="document.getElementById('change-password-form').style.display='block'">Bytt passord</button>
+    <div id="change-password-form" style="display:none;">
+        <form method="POST">
+            <input type="password" name="old_password" placeholder="Nåværende passord" required>
+            <input type="password" name="new_password" placeholder="Nytt passord" required>
+            <button type="submit" name="change_password">Endre passord</button>
+        </form>
+    </div>
+    
     <?php if (isset($success)) echo "<p style='color: green;'>$success</p>"; ?>
     <?php if (isset($error)) echo "<p style='color: red;'>$error</p>"; ?>
 </div>
