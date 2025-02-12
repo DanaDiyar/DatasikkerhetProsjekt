@@ -4,38 +4,53 @@ ini_set('display_errors', 1);
 
 require 'meldingssystem.php';
 
-// Hent meldinger fra databasen
-$stmt = $conn->prepare("SELECT m.id, m.content, m.created_at, l.email AS lecturer_email 
-                        FROM messages m
-                        JOIN lecturers l ON m.lecturer_id = l.id
-                        ORDER BY m.created_at DESC");
-$stmt->execute();
-$messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    // Hent meldinger fra databasen
+    $stmt = $conn->prepare("SELECT m.id, m.content, m.created_at, l.email AS lecturer_email 
+                            FROM meldinger m
+                            JOIN lecturers l ON m.lecturer_id = l.id
+                            ORDER BY m.created_at DESC");
+    $stmt->execute();
+    $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die("Feil ved henting av meldinger: " . $e->getMessage());
+}
 
 // Håndtering av svar på meldinger
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
-    $message_id = $_POST['message_id'];
-    $reply = $_POST['reply'];
-    $lecturer_id = 1; // Midlertidig statisk ID, erstatt med faktisk innlogget bruker senere
+    try {
+        $message_id = $_POST['message_id'];
+        $reply = $_POST['reply'];
+        $lecturer_id = 1; // Midlertidig statisk ID
 
-    $stmt = $conn->prepare("INSERT INTO replies (message_id, lecturer_id, content) VALUES (?, ?, ?)");
-    $stmt->execute([$message_id, $lecturer_id, $reply]);
+        $stmt = $conn->prepare("INSERT INTO svar (melding_id, foreleser_id, innhold) VALUES (?, ?, ?)");
+        $stmt->execute([$message_id, $lecturer_id, $reply]);
+
+        echo "<p style='color: green;'>Svar lagret!</p>";
+    } catch (PDOException $e) {
+        die("Feil ved lagring av svar: " . $e->getMessage());
+    }
 }
 
 // Håndtering av passordbytte
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
-    $old_password = $_POST['old_password'];
-    $new_password = password_hash($_POST['new_password'], PASSWORD_BCRYPT);
-    $lecturer_id = 1; // Midlertidig statisk ID
+    try {
+        $old_password = $_POST['old_password'];
+        $new_password = password_hash($_POST['new_password'], PASSWORD_BCRYPT);
+        $lecturer_id = 1; // Midlertidig statisk ID
 
-    $stmt = $conn->prepare("UPDATE lecturers SET password_hash = ? WHERE id = ?");
-    $stmt->execute([$new_password, $lecturer_id]);
-    echo "<p style='color: green;'>Passordet er oppdatert!</p>";
+        $stmt = $conn->prepare("UPDATE lecturers SET password_hash = ? WHERE id = ?");
+        $stmt->execute([$new_password, $lecturer_id]);
+
+        echo "<p style='color: green;'>Passordet er oppdatert!</p>";
+    } catch (PDOException $e) {
+        die("Feil ved oppdatering av passord: " . $e->getMessage());
+    }
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="no">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
