@@ -1,18 +1,29 @@
 <?php
+session_start();
+require 'db_connect.php'; // Kobling til databasen
+
+// Sjekk om bruker er logget inn og er foreleser
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'foreleser') {
+    header("Location: login.php");
+    exit();
+}
+
+$foreleser_id = $_SESSION['user_id'];
+$foreleser_email = $_SESSION['user_email'];
+$foreleser_navn = $_SESSION['user_name'];
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-require 'meldingssystem.php'; // Sørg for at dette peker på riktig fil
-
+// Hent meldinger fra databasen
 try {
-    // Hent meldinger fra databasen (Endret 'forelesere' til 'brukere')
     $stmt = $conn->prepare("SELECT m.id, m.innhold, m.dato_opprettet, b.e_post AS bruker_e_post 
-                        FROM meldinger m
-                        JOIN brukere b ON m.student_id = b.id
-                        ORDER BY m.dato_opprettet DESC");
+                            FROM meldinger m
+                            JOIN brukere b ON m.student_id = b.id
+                            ORDER BY m.dato_opprettet DESC");
     $stmt->execute();
-    $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
+    $messages = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+} catch (Exception $e) {
     die("Feil ved henting av meldinger: " . $e->getMessage());
 }
 
@@ -20,16 +31,15 @@ try {
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
     try {
         $message_id = $_POST['message_id'];
-        $reply = $_POST['reply'];
-        $lecturer_id = 1; // Midlertidig statisk ID
+        $reply = htmlspecialchars($_POST['reply']);
 
-        // Bruker 'svar' tabellen og riktige kolonnenavn
         $stmt = $conn->prepare("INSERT INTO svar (melding_id, bruker_id, innhold) VALUES (?, ?, ?)");
-        $stmt->execute([$message_id, $lecturer_id, $reply]);
+        $stmt->bind_param("iis", $message_id, $foreleser_id, $reply);
+        $stmt->execute();
 
-        echo "<p style='color: green;'>Svar lagret!</p>";
-    } catch (PDOException $e) {
-        die("Feil ved lagring av svar: " . $e->getMessage());
+        $success = "Svar lagret!";
+    } catch (Exception $e) {
+        $error = "Feil ved lagring av svar: " . $e->getMessage();
     }
 }
 
@@ -37,15 +47,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
     try {
         $old_password = $_POST['old_password'];
-        $new_password = password_hash($_POST['new_password'], PASSWORD_BCRYPT);
-        $lecturer_id = 1; // Midlertidig statisk ID
+        $new_password = $_POST['new_password'];
 
-        $stmt = $conn->prepare("UPDATE brukere SET password_hash = ? WHERE id = ?");
-        $stmt->execute([$new_password, $lecturer_id]);
+        // Hent brukerens lagrede passord
+        $stmt = $conn->prepare("SELECT passord_hash FROM brukere WHERE id = ?");
+        $stmt->bind_param("i", $foreleser_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
 
-        echo "<p style='color: green;'>Passordet er oppdatert!</p>";
-    } catch (PDOException $e) {
-        die("Feil ved oppdatering av passord: " . $e->getMessage());
+        if ($user && password_verify($old_password, $user['passord_hash'])) {
+            // Oppdater passordet
+            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+            $update_stmt = $conn->prepare("UPDATE brukere SET passord_hash = ? WHERE id = ?");
+            $update_stmt->bind_param("si", $hashed_password, $foreleser_id);
+            $update_stmt->execute();
+
+            $success = "Passordet er oppdatert!";
+        } else {
+            $error = "Feil nåværende passord!";
+        }
+    } catch (Exception $e) {
+        $error = "Feil ved oppdatering av passord: " . $e->getMessage();
     }
 }
 ?>
@@ -61,6 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
 <body>
 <header>
     <h1>Forelesers Dashboard</h1>
+    <p>Velkommen, <?= htmlspecialchars($foreleser_navn) ?> (<?= htmlspecialchars($foreleser_email) ?>)</p>
+    <a href="logout.php">Logg ut</a>
 </header>
 
 <div class="container">
@@ -68,8 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
     <ul>
         <?php foreach ($messages as $message): ?>
             <li>
-                <strong>Melding #<?= $message['id'] ?>:</strong> <?= htmlspecialchars($message['content']) ?>
-                <p><small>Sendt av foreleser: <?= htmlspecialchars($message['lecturer_email']) ?></small></p>
+                <strong>Melding #<?= $message['id'] ?>:</strong> <?= htmlspecialchars($message['innhold']) ?>
+                <p><small>Sendt av: <?= htmlspecialchars($message['bruker_e_post']) ?></small></p>
                 <button onclick="document.getElementById('reply-form-<?= $message['id'] ?>').style.display='block'">
                     Svar
                 </button>
@@ -90,12 +115,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
     <button onclick="document.getElementById('change-password-form').style.display='block'">Bytt passord</button>
     <div id="change-password-form" style="display:none;">
         <form method="POST">
-            <input type="hidden" name="change_password" value="1">
             <input type="password" name="old_password" placeholder="Nåværende passord" required>
             <input type="password" name="new_password" placeholder="Nytt passord" required>
-            <button type="submit">Endre passord</button>
+            <button type="submit" name="change_password">Endre passord</button>
         </form>
     </div>
+
+    <?php if (isset($success)) echo "<p style='color: green;'>$success</p>"; ?>
+    <?php if (isset($error)) echo "<p style='color: red;'>$error</p>"; ?>
 </div>
 </body>
 </html>
