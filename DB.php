@@ -5,7 +5,7 @@
 $host     = '158.39.188.205';  // Host, ofte 'localhost'
 $dbname   = 'Datasikkerhet';   // Navnet på databasen din
 $username = 'datasikkerhet';   // Databasebrukernavn
-$password = 'ditt_passord';    // Databasepassord
+$password = 'DittPassord';    // Databasepassord
 
 try {
     // Opprett en ny PDO-kobling
