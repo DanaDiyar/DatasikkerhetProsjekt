@@ -34,6 +34,17 @@ if (isset($_POST['subject_code']) && isset($_POST['pin_code'])) {
         if ($subject['pin_kode'] == $pinCodeInput) {
             $subjectInfo = $subject;
             
+            // Hent foreleser-info
+            $stmtLect = $conn->prepare("SELECT navn, bilde FROM brukere WHERE id = ?");
+            $stmtLect->bind_param("i", $subjectInfo['foreleser_id']);
+            $stmtLect->execute();
+            $resultLect = $stmtLect->get_result();
+            $lecturerData = $resultLect->fetch_assoc();
+            $stmtLect->close();
+
+            // Sjekk om foreleser har lastet opp et bilde, ellers vis standardbilde
+            $foreleserBilde = !empty($lecturerData['bilde']) ? htmlspecialchars($lecturerData['bilde']) : "uploads/default.png";
+
             // Hent meldinger for dette emnet
             $stmtMsg = $conn->prepare("SELECT m.*, u.navn as student_navn, s.innhold as svar_innhold, s.dato_opprettet as svar_dato 
                                        FROM meldinger m
@@ -47,22 +58,11 @@ if (isset($_POST['subject_code']) && isset($_POST['pin_code'])) {
             $messages = $resultMsg->fetch_all(MYSQLI_ASSOC);
             $stmtMsg->close();
         } else {
-            echo "Feil PIN-kode!";
+            echo "<p style='color:red;'>Feil PIN-kode!</p>";
         }
     } else {
-        echo "Fant ikke emnekode!";
+        echo "<p style='color:red;'>Fant ikke emnekode!</p>";
     }
-}
-
-/* Håndtering av rapportering av en melding */
-if (isset($_GET['report'])) {
-    $messageId = $_GET['report'];
-    $grunn = 'Rapportert via gjesteside';
-    $stmtRep = $conn->prepare("INSERT INTO rapporterte_meldinger (melding_id, grunn) VALUES (?, ?)");
-    $stmtRep->bind_param("is", $messageId, $grunn);
-    $stmtRep->execute();
-    $stmtRep->close();
-    echo "Meldingen er rapportert!";
 }
 ?>
 
@@ -87,22 +87,12 @@ if (isset($_GET['report'])) {
     </form>
     <hr> 
 
-    <!-- Viser emneinfo, meldinger, svar og kommentarer (kun dersom skjemaet er POSTET og $subjectInfo er satt) -->
+    <!-- Viser emneinfo, meldinger, svar og kommentarer -->
     <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && $subjectInfo): ?>
         <h2><?= htmlspecialchars($subjectInfo['emnekode']) ?> - <?= htmlspecialchars($subjectInfo['emnenavn']) ?></h2>
-        <?php
-        // Hent foreleser-info
-        $stmtLect = $conn->prepare("SELECT navn, bilde FROM brukere WHERE id = ?");
-        $stmtLect->bind_param("i", $subjectInfo['foreleser_id']);
-        $stmtLect->execute();
-        $resultLect = $stmtLect->get_result();
-        $lecturerData = $resultLect->fetch_assoc();
-        $stmtLect->close();
-        ?>
+        
         <p>Foreleser: <?= htmlspecialchars($lecturerData['navn']) ?></p>
-        <?php if ($lecturerData['bilde']): ?>
-            <img src="<?= htmlspecialchars($lecturerData['bilde']) ?>" alt="Bilde av foreleser" width="100">
-        <?php endif; ?>
+        <img src="<?= $foreleserBilde ?>" alt="Bilde av foreleser" width="150">
 
         <hr>
 
@@ -139,4 +129,3 @@ if (isset($_GET['report'])) {
     <?php endif; ?>
 </body>
 </html>
-
