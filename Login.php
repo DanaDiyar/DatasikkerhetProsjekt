@@ -96,7 +96,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                 header("Location: dashboard.php");
                 exit();
             } else {
-                header("Location: student_dashboard.php");
+                header("Location: student.php");
                 exit();
             }
         } else {
