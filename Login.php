@@ -9,14 +9,12 @@ $error = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     $name = htmlspecialchars($_POST['name']);
     $email = htmlspecialchars($_POST['email']);
-    $role = htmlspecialchars($_POST['role']); // 'student' eller 'foreleser'
+    $role = htmlspecialchars($_POST['role']);
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    // Bare studenter får studieretning og studiekull
     $study_program = ($role === "student" && !empty($_POST['study_program'])) ? htmlspecialchars($_POST['study_program']) : NULL;
     $year = ($role === "student" && !empty($_POST['year'])) ? $_POST['year'] : NULL;
 
-    // Bare forelesere får emneinfo
     $emnekode = ($role === "foreleser" && !empty($_POST['emnekode'])) ? htmlspecialchars($_POST['emnekode']) : NULL;
     $emnenavn = ($role === "foreleser" && !empty($_POST['emnenavn'])) ? htmlspecialchars($_POST['emnenavn']) : NULL;
     $pin_kode = ($role === "foreleser" && !empty($_POST['pin_kode'])) ? htmlspecialchars($_POST['pin_kode']) : NULL;
@@ -24,14 +22,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     // 📌 **Bildelagring på serveren (Ikke i databasen)**
     $imagePath = NULL;
     if ($role === "foreleser" && isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
-        $uploadDir = "uploads/";  // Mappen på serveren
-        $fileName = basename($_FILES["image"]["name"]); 
-        $imagePath = $uploadDir . uniqid() . "_" . $fileName; // Unik ID for å unngå duplikater
-        
+        $uploadDir = "uploads/";
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true); // Sørger for at mappen finnes
+        }
+
+        $fileName = uniqid() . "_" . basename($_FILES["image"]["name"]);
+        $imagePath = $uploadDir . $fileName;
+
         if (!move_uploaded_file($_FILES["image"]["tmp_name"], $imagePath)) {
             $error = "Feil ved opplasting av bildet.";
             error_log("move_uploaded_file() feilet! Sjekk rettigheter for uploads/. TMP: " . $_FILES["image"]["tmp_name"]);
-        } 
+            $imagePath = NULL;
+        }
+    }
 
     // Sjekk om e-posten allerede finnes i databasen
     $check_email = $conn->prepare("SELECT id FROM brukere WHERE e_post = ?");
@@ -75,7 +79,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     $password = $_POST['password'];
 
     // Sjekk om e-posten finnes i databasen
-    $stmt = $conn->prepare("SELECT id, navn, e_post, passord_hash, rolle FROM brukere WHERE e_post = ?");
+    $stmt = $conn->prepare("SELECT id, navn, e_post, passord_hash, rolle, bilde FROM brukere WHERE e_post = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -89,6 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
             $_SESSION['user_name'] = $user['navn'];
             $_SESSION['user_email'] = $user['e_post'];
             $_SESSION['user_role'] = $user['rolle'];
+            $_SESSION['user_image'] = $user['bilde']; // Lagre bildesti i session
 
             // Omdiriger basert på rolle
             if ($user['rolle'] === "foreleser") {
@@ -114,34 +119,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logg inn / Registrering</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .hidden { display: none; }
-    </style>
-    <script>
-        function toggleFields() {
-            const role = document.getElementById("role").value;
-            document.getElementById("student-fields").style.display = (role === "student") ? "block" : "none";
-            document.getElementById("lecturer-fields").style.display = (role === "foreleser") ? "block" : "none";
-        }
-    </script>
 </head>
 <body>
     <h2>Registrering</h2>
     <form method="post" enctype="multipart/form-data">
         <input type="text" name="name" placeholder="Navn" required><br>
         <input type="email" name="email" placeholder="E-post" required><br>
-        <select name="role" id="role" onchange="toggleFields()" required>
+        <select name="role" id="role" required>
             <option value="">Velg rolle</option>
             <option value="student">Student</option>
             <option value="foreleser">Foreleser</option>
         </select><br>
 
-        <div id="student-fields" class="hidden">
-            <input type="text" name="study_program" placeholder="Studieretning"><br>
-            <input type="number" name="year" placeholder="Studiekull"><br>
-        </div>
-
-        <div id="lecturer-fields" class="hidden">
+        <div id="lecturer-fields">
             <input type="file" name="image" accept="image/*"><br>
             <input type="text" name="emnekode" placeholder="Emnekode"><br>
             <input type="text" name="emnenavn" placeholder="Emnenavn"><br>
@@ -158,9 +148,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
         <input type="password" name="password" placeholder="Passord" required><br>
         <button type="submit" name="login">Logg inn</button>
     </form>
-
-    <p><a href="glemt_passord.php">Glemt passord?</a></p>
-    <p><a href="index.php" class="btn">Gjestebruker</a></p>
 
     <?php if ($error) echo "<p style='color: red;'>$error</p>"; ?>
     <?php if ($success) echo "<p style='color: green;'>$success</p>"; ?>
