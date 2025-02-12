@@ -9,32 +9,40 @@ $password = 'DittPassord';
 $conn = new mysqli($host, $username, $password, $dbname);
 
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die("Databaseforbindelse feilet: " . $conn->connect_error);
 }
 
-// Emneliste
-$subjects = [
-    1 => "Emne 1",
-    2 => "Emne 2",
-    3 => "Emne 3",
-    4 => "Emne 4"
-];
+// Hente emner fra databasen
+$subjects = [];
+$query = "SELECT id, emnenavn FROM emner";
+$result = $conn->query($query);
+
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $subjects[$row['id']] = $row['emnenavn'];
+    }
+} else {
+    $subjects[0] = "Ingen emner funnet";
+}
 
 if (isset($_POST['send_message'])) {
     $subject_id = $_POST['subject_id'];
     $message_text = htmlspecialchars($_POST['message_text']);
 
-    // Sett inn melding i databasen
-    $stmt = $conn->prepare("INSERT INTO meldinger (subject, message) VALUES (?, ?)");
-    $stmt->bind_param("ss", $subjects[$subject_id], $message_text);
+    if (isset($subjects[$subject_id])) {
+        $stmt = $conn->prepare("INSERT INTO meldinger (subject_id, message) VALUES (?, ?)");
+        $stmt->bind_param("is", $subject_id, $message_text);
 
-    if ($stmt->execute()) {
-        $success = "Din melding er sendt og lagret i databasen!";
+        if ($stmt->execute()) {
+            $success = "Din melding er sendt og lagret i databasen!";
+        } else {
+            $error = "Feil ved sending av melding: " . $conn->error;
+        }
+
+        $stmt->close();
     } else {
-        $error = "Feil ved sending av melding: " . $conn->error;
+        $error = "Ugyldig emne valgt.";
     }
-
-    $stmt->close();
 }
 ?>
 
@@ -53,7 +61,7 @@ if (isset($_POST['send_message'])) {
         Velg emne:
         <select name="subject_id" required>
             <?php foreach ($subjects as $id => $subject): ?>
-                <option value="<?= $id ?>"><?= htmlspecialchars($subject) ?></option>
+                <option value="<?= htmlspecialchars($id) ?>"><?= htmlspecialchars($subject) ?></option>
             <?php endforeach; ?>
         </select><br>
         Melding: <textarea name="message_text" required></textarea><br>
@@ -62,6 +70,8 @@ if (isset($_POST['send_message'])) {
 
     <?php if (isset($success)): ?>
         <p style="color: green;"> <?= $success ?> </p>
+    <?php elseif (isset($error)): ?>
+        <p style="color: red;"> <?= $error ?> </p>
     <?php endif; ?>
 </body>
 </html>
