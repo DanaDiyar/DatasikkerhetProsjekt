@@ -9,9 +9,36 @@
     <h1>Hva er gjort?</h1>
 
     <h2>1. Opprettelse av server med Apache</h2>
-    <p>Beskrivelse: Brukte</p>
+    <p>Apache installeres for å håndtere forespørsler. Etter installasjonen må brannmuren konfigureres for å tillate trafikk. Deretter startes og aktiveres Apache, og status kan sjekkes for å bekrefte at serveren kjører. For å teste om serveren fungerer, åpnes IP-adressen i en nettleser.</p>
 
-    <h2>2. Overskrift 2</h2>
-    <p>Beskrivelse: Rapportere en melding basert på ID. Bruk <code>messageId</code> for å angi hvilken melding som skal rapporteres.</p>
+    <h2>2. PHP-installasjon og konfigurasjon</h2>
+    <p>PHP og nødvendige moduler installeres. For å bekrefte at PHP fungerer, opprettes en testfil i serverens rotmappe som deretter åpnes i nettleseren.</p>
+
+    <h2>3. Oppsett av MySQL database</h2>
+    <p>MySQL installeres for å håndtere datalagring. Etter installasjonen sikres MySQL-konfigurasjonen ved å sette passord og aktivere nødvendige sikkerhetsinnstillinger. Deretter logges det inn i MySQL, og databasen opprettes sammen med nødvendige tabeller for meldinger og brukere.</p>
+
+    <h2>4. Konfigurering av Apache for prosjektet</h2>
+    <p>Apache må konfigureres for å vite hvor prosjektfilene ligger. En ny konfigurasjonsfil opprettes, som peker til prosjektets mappe. Denne aktiveres, og Apache restartes for å laste inn endringene.</p>
+
+    <h2>5. Plassering av filer</h2>
+    <p>Prosjektfilene ligger organisert i en bestemt mappe på serveren. Denne inneholder blant annet API-filen som håndterer forespørsler, en databasekoblingsfil som muliggjør tilkobling til MySQL, og en indeksfil for hovedsiden.
+
+        Databasekoblingsfilen definerer servernavn, brukernavn, passord og databasenavn. Deretter opprettes en tilkobling til databasen, og hvis denne feiler, vises en feilmelding.
+        
+        API-filen håndterer forespørsler til serveren. Ved en GET-forespørsel kan den hente meldinger fra databasen eller rapportere en melding som upassende. Hvis handlingen er ugyldig eller mangler, returneres en feilmelding. Til slutt lukkes tilkoblingen til databasen.
+    </p>
+   
+    <h2>6. URL-basert API</h2>
+    <p>API-et testes ved å sende en forespørsel til serveren og sjekke responsen. Hvis alt fungerer, skal URL-en sende deg til ønskelig side</p>
+
+    <h2>7. Feilsøking</h2>
+    <p>Dersom noe ikke fungerer som forventet, kan følgende tiltak gjøres:
+
+        Sjekke Apache-loggene for eventuelle feil.
+        
+        Verifisere at MySQL kjører som forventet.
+        
+        Kontrollere at filene har riktige rettigheter og eier.
+    </p>
 </body>
 </html>
