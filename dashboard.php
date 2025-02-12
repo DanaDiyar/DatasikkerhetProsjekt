@@ -6,7 +6,7 @@ require 'meldingssystem.php'; // Sørg for at dette peker på riktig fil
 
 try {
     // Hent meldinger fra databasen (Endret 'forelesere' til 'brukere')
-    $stmt = $conn->prepare("SELECT m.id, m.innhold, m.dato_opprettet, b.email AS bruker_email 
+    $stmt = $conn->prepare("SELECT m.id, m.innhold, m.dato_opprettet, b.e_post AS bruker_e_post 
                         FROM meldinger m
                         JOIN brukere b ON m.student_id = b.id
                         ORDER BY m.dato_opprettet DESC");
