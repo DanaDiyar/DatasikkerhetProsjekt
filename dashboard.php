@@ -66,7 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
 
 // Håndtering av passordbytte
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
-    $bruker_id = 1; // 🔹 Endre dette til faktisk innlogget bruker senere!
+    // 🔹 Bruk riktig bruker-ID fra sessionen!
+    $bruker_id = $_SESSION['user_id']; 
+    
     $old_password = $_POST['old_password'];
     $new_password = $_POST['new_password'];
 
@@ -74,16 +76,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
     $stmt = $conn->prepare("SELECT passord_hash FROM brukere WHERE id = ?");
     $stmt->bind_param("i", $bruker_id);
     $stmt->execute();
-    $stmt->bind_result($hashed_password);
-    $stmt->fetch();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc(); // 🔹 Riktig måte å hente data på med MySQLi
     $stmt->close();
 
-    if (!$hashed_password) {
-        die("Bruker ikke funnet!");
+    if (!$user) {
+        die("<p style='color: red;'>Bruker ikke funnet!</p>");
     }
 
     // 🔹 2. Sjekk om det gamle passordet stemmer
-    if (!password_verify($old_password, $hashed_password)) {
+    if (!password_verify($old_password, $user['passord_hash'])) {
         die("<p style='color: red;'>Feil passord! Prøv igjen.</p>");
     }
 
