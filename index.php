@@ -1,5 +1,5 @@
 <?php
-require 'db_connection.php'; // Inneholder MySQLi-koblingen i variabelen $conn
+require 'db_connect.php'; // Inneholder MySQLi-koblingen i variabelen $conn
 
 $messages = [];
 $subjectInfo = null;
