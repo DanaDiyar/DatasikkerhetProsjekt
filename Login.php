@@ -32,7 +32,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
             error_log("Feil ved opplasting av bildet: " . $_FILES["image"]["error"]);
             $imagePath = NULL;
         }
+    }// Behandle innlogging
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
+    $email = htmlspecialchars($_POST['email']);
+    $password = $_POST['password'];
+
+    // Sjekk om e-posten finnes
+    $stmt = $conn->prepare("SELECT id, navn, e_post, passord_hash, rolle FROM brukere WHERE e_post = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+
+        // Verifiser passord
+        if (password_verify($password, $user['passord_hash'])) {
+            // Lagre brukerdata i sesjonen
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_name'] = $user['navn'];
+            $_SESSION['user_email'] = $user['e_post'];
+            $_SESSION['user_role'] = $user['rolle'];
+
+            // Omdiriger basert på rolle
+            if ($user['rolle'] === "foreleser") {
+                header("Location: foreleser_dashboard.php");
+            } else {
+                header("Location: student_dashboard.php");
+            }
+            exit();
+        } else {
+            $error = "Feil passord. Prøv igjen.";
+        }
+    } else {
+        $error = "E-postadressen finnes ikke.";
     }
+}
 
     // Sjekk om e-posten allerede finnes i databasen
     $check_email = $conn->prepare("SELECT * FROM brukere WHERE e_post = ?");
@@ -150,6 +185,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
 
         <button type="submit" name="register">Registrer</button>
     </form>
+
+    <h2>Logg inn</h2>
+    <form method="post">
+        <label for="email">E-post:</label>
+        <input type="email" name="email" id="email" required><br>
+
+        <label for="password">Passord:</label>
+        <input type="password" name="password" id="password" required><br>
+
+        <button type="submit" name="login">Logg inn</button>
+    </form>
+
     <p><a href="glemt_passord.php">Glemt passord?</a></p>
 
 
