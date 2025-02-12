@@ -6,10 +6,10 @@ require 'meldingssystem.php'; // Sørg for at dette peker på riktig fil
 
 try {
     // Hent meldinger fra databasen (Endret 'forelesere' til 'brukere')
-    $stmt = $conn->prepare("SELECT m.id, m.content, m.created_at, b.email AS bruker_email 
-                            FROM meldinger m
-                            JOIN brukere b ON m.lecturer_id = b.id
-                            ORDER BY m.created_at DESC");
+    $stmt = $conn->prepare("SELECT m.id, m.innhold, m.dato_opprettet, b.email AS bruker_email 
+                        FROM meldinger m
+                        JOIN brukere b ON m.student_id = b.id
+                        ORDER BY m.dato_opprettet DESC");
     $stmt->execute();
     $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
