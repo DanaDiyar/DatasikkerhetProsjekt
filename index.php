@@ -1,5 +1,5 @@
 <?php
-require 'db.php';
+require 'DB.php';
 
 $messages = [];
 $subjectInfo = null;

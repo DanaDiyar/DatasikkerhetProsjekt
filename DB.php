@@ -1,5 +1,5 @@
 <?php
-// db.php
+// DB.php
 
 // Konfigurer dine databaseinnstillinger:
 $host     = '158.39.188.205';  // Host, ofte 'localhost'
