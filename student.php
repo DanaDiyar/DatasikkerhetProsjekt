@@ -1,18 +1,22 @@
 <?php
 session_start();
+require 'db_connect.php';
 
-$host = '158.39.188.205';
-$dbname = 'Datasikkerhet';
-$username = 'datasikkerhet';
-$password = 'DittPassord';
-
-$conn = new mysqli($host, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Databaseforbindelse feilet: " . $conn->connect_error);
+// Sjekk om student er logget inn
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'student') {
+    header("Location: login.php");
+    exit();
 }
 
-// Hente emner og deres forelesere fra databasen
+// Hent studentinfo fra sesjonen
+$student_id = $_SESSION['user_id'];
+$student_email = $_SESSION['user_email'];
+$student_navn = $_SESSION['user_name'];
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Hent emner studenten er påmeldt til (hvis aktuelt)
 $subjects = [];
 $query = "SELECT id, emnenavn, foreleser_id FROM emner";
 $result = $conn->query($query);
@@ -28,10 +32,10 @@ if ($result->num_rows > 0) {
     $subjects[0] = ['name' => "Ingen emner funnet", 'foreleser_id' => null];
 }
 
-if (isset($_POST['send_message'])) {
+// Håndtering av meldinger
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['send_message'])) {
     $subject_id = $_POST['subject_id'];
     $message_text = htmlspecialchars($_POST['message_text']);
-    $student_id = $_SESSION['student_id'] ?? null; // Hent student-ID fra session
 
     if (isset($subjects[$subject_id])) {
         $foreleser_id = $subjects[$subject_id]['foreleser_id'];
@@ -60,22 +64,30 @@ if (isset($_POST['send_message'])) {
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard</title>
+    <title>Student Dashboard</title>
     <link rel="stylesheet" type="text/css" href="stylestudent.css">
 </head>
 <body>
-    <h1>Velkommen!</h1>
+<header>
+    <h1>Student Dashboard</h1>
+    <p>Velkommen, <?= htmlspecialchars($student_navn) ?> (<?= htmlspecialchars($student_email) ?>)</p>
+    <a href="logout.php">Logg ut</a>
+</header>
 
-    <h2>Send anonym melding</h2>
+<div class="container">
+    <h2>Send melding til foreleser</h2>
     <form method="post">
-        Velg emne:
+        <label for="subject">Velg emne:</label>
         <select name="subject_id" required>
             <?php foreach ($subjects as $id => $subject): ?>
                 <option value="<?= htmlspecialchars($id) ?>"><?= htmlspecialchars($subject['name']) ?></option>
             <?php endforeach; ?>
         </select><br>
-        Melding: <textarea name="message_text" required></textarea><br>
-        <input type="submit" name="send_message" value="Send anonym melding">
+
+        <label for="message_text">Melding:</label>
+        <textarea name="message_text" required></textarea><br>
+
+        <input type="submit" name="send_message" value="Send melding">
     </form>
 
     <?php if (isset($success)): ?>
@@ -83,5 +95,7 @@ if (isset($_POST['send_message'])) {
     <?php elseif (isset($error)): ?>
         <p style="color: red;"> <?= $error ?> </p>
     <?php endif; ?>
+</div>
+
 </body>
 </html>
