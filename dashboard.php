@@ -5,10 +5,10 @@ ini_set('display_errors', 1);
 require 'meldingssystem.php'; // Sørg for at dette peker på riktig fil
 
 try {
-    // Hent meldinger fra databasen
-    $stmt = $conn->prepare("SELECT m.id, m.content, m.created_at, l.email AS lecturer_email 
+    // Hent meldinger fra databasen (Endret 'forelesere' til 'brukere')
+    $stmt = $conn->prepare("SELECT m.id, m.content, m.created_at, b.email AS bruker_email 
                             FROM meldinger m
-                            JOIN forelesere l ON m.lecturer_id = l.id  -- Endret fra 'lecturers' til 'forelesere'
+                            JOIN brukere b ON m.lecturer_id = b.id
                             ORDER BY m.created_at DESC");
     $stmt->execute();
     $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
         $lecturer_id = 1; // Midlertidig statisk ID
 
         // Bruker 'svar' tabellen og riktige kolonnenavn
-        $stmt = $conn->prepare("INSERT INTO svar (melding_id, foreleser_id, innhold) VALUES (?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO svar (melding_id, bruker_id, innhold) VALUES (?, ?, ?)");
         $stmt->execute([$message_id, $lecturer_id, $reply]);
 
         echo "<p style='color: green;'>Svar lagret!</p>";
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
         $new_password = password_hash($_POST['new_password'], PASSWORD_BCRYPT);
         $lecturer_id = 1; // Midlertidig statisk ID
 
-        $stmt = $conn->prepare("UPDATE forelesere SET password_hash = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE brukere SET password_hash = ? WHERE id = ?");
         $stmt->execute([$new_password, $lecturer_id]);
 
         echo "<p style='color: green;'>Passordet er oppdatert!</p>";
