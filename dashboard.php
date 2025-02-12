@@ -66,39 +66,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
 
 // Håndtering av passordbytte
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
-    try {
-        $bruker_id = 1; // 🔹 Endre dette til faktisk innlogget bruker senere!
-        $old_password = $_POST['old_password'];
-        $new_password = $_POST['new_password'];
+    $bruker_id = 1; // 🔹 Endre dette til faktisk innlogget bruker senere!
+    $old_password = $_POST['old_password'];
+    $new_password = $_POST['new_password'];
 
-        // 🔹 1. Hent det gamle passordet fra databasen
-        $stmt = $conn->prepare("SELECT passord_hash FROM brukere WHERE id = ?");
-        $stmt->execute([$bruker_id]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    // 🔹 1. Hent det gamle passordet fra databasen
+    $stmt = $conn->prepare("SELECT passord_hash FROM brukere WHERE id = ?");
+    $stmt->bind_param("i", $bruker_id);
+    $stmt->execute();
+    $stmt->bind_result($hashed_password);
+    $stmt->fetch();
+    $stmt->close();
 
-        if (!$user) {
-            die("Bruker ikke funnet!");
-        }
-
-        // 🔹 2. Sjekk om det gamle passordet stemmer
-        if (!password_verify($old_password, $user['passord_hash'])) {
-            die("<p style='color: red;'>Feil passord! Prøv igjen.</p>");
-        }
-
-        // 🔹 3. Hash det nye passordet
-        $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
-
-        // 🔹 4. Oppdater passordet i databasen
-        $stmt = $conn->prepare("UPDATE brukere SET passord_hash = ? WHERE id = ?");
-        $stmt->execute([$hashed_password, $bruker_id]);
-
-        echo "<p style='color: green;'>Passordet er oppdatert!</p>";
-
-    } catch (PDOException $e) {
-        die("Feil ved oppdatering av passord: " . $e->getMessage());
+    if (!$hashed_password) {
+        die("Bruker ikke funnet!");
     }
-}
 
+    // 🔹 2. Sjekk om det gamle passordet stemmer
+    if (!password_verify($old_password, $hashed_password)) {
+        die("<p style='color: red;'>Feil passord! Prøv igjen.</p>");
+    }
+
+    // 🔹 3. Hash det nye passordet
+    $new_hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
+
+    // 🔹 4. Oppdater passordet i databasen
+    $stmt = $conn->prepare("UPDATE brukere SET passord_hash = ? WHERE id = ?");
+    $stmt->bind_param("si", $new_hashed_password, $bruker_id);
+    $stmt->execute();
+    $stmt->close();
+
+    echo "<p style='color: green;'>Passordet er oppdatert!</p>";
+}
 ?>
 
 <!DOCTYPE html>
