@@ -62,35 +62,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
     } catch (Exception $e) {
         $error = "Feil ved lagring av svar: " . $e->getMessage();
     }
+}
 
 // Håndtering av passordbytte
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
     try {
+        $bruker_id = 1; // 🔹 Endre dette til faktisk innlogget bruker senere!
         $old_password = $_POST['old_password'];
         $new_password = $_POST['new_password'];
 
-        // Hent brukerens lagrede passord
+        // 🔹 1. Hent det gamle passordet fra databasen
         $stmt = $conn->prepare("SELECT passord_hash FROM brukere WHERE id = ?");
-        $stmt->bind_param("i", $foreleser_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $user = $result->fetch_assoc();
+        $stmt->execute([$bruker_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user && password_verify($old_password, $user['passord_hash'])) {
-            // Oppdater passordet
-            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-            $update_stmt = $conn->prepare("UPDATE brukere SET passord_hash = ? WHERE id = ?");
-            $update_stmt->bind_param("si", $hashed_password, $foreleser_id);
-            $update_stmt->execute();
-
-            $success = "Passordet er oppdatert!";
-        } else {
-            $error = "Feil nåværende passord!";
+        if (!$user) {
+            die("Bruker ikke funnet!");
         }
-    } catch (Exception $e) {
-        $error = "Feil ved oppdatering av passord: " . $e->getMessage();
+
+        // 🔹 2. Sjekk om det gamle passordet stemmer
+        if (!password_verify($old_password, $user['passord_hash'])) {
+            die("<p style='color: red;'>Feil passord! Prøv igjen.</p>");
+        }
+
+        // 🔹 3. Hash det nye passordet
+        $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
+
+        // 🔹 4. Oppdater passordet i databasen
+        $stmt = $conn->prepare("UPDATE brukere SET passord_hash = ? WHERE id = ?");
+        $stmt->execute([$hashed_password, $bruker_id]);
+
+        echo "<p style='color: green;'>Passordet er oppdatert!</p>";
+
+    } catch (PDOException $e) {
+        die("Feil ved oppdatering av passord: " . $e->getMessage());
     }
-}
 }
 
 ?>
