@@ -11,49 +11,66 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     $email = htmlspecialchars($_POST['email']);
     $role = htmlspecialchars($_POST['role']); // 'student' eller 'foreleser'
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+
+    // Bare studenter får studieretning og studiekull
     $study_program = ($role === "student" && isset($_POST['study_program']) && !empty($_POST['study_program'])) ? htmlspecialchars($_POST['study_program']) : NULL;
     $year = ($role === "student" && isset($_POST['year']) && !empty($_POST['year'])) ? $_POST['year'] : NULL;
 
+    // Bare forelesere får emneinfo
+    $emnekode = ($role === "foreleser" && isset($_POST['emnekode']) && !empty($_POST['emnekode'])) ? htmlspecialchars($_POST['emnekode']) : NULL;
+    $emnenavn = ($role === "foreleser" && isset($_POST['emnenavn']) && !empty($_POST['emnenavn'])) ? htmlspecialchars($_POST['emnenavn']) : NULL;
+    $pin_kode = ($role === "foreleser" && isset($_POST['pin_kode']) && !empty($_POST['pin_kode'])) ? htmlspecialchars($_POST['pin_kode']) : NULL;
 
     // Håndtering av bildeopplasting for forelesere
-    $imagePath = NULL; // Standardverdi hvis ingen bilde lastes opp
+    $imagePath = NULL;
+    if ($role === "foreleser" && isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
+        $uploadDir = "uploads/";
+        $imagePath = $uploadDir . basename($_FILES["image"]["name"]);
 
-// Hvis brukeren er en foreleser og laster opp et bilde
-if ($role === "foreleser" && isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
-    $uploadDir = "uploads/";
-    $imagePath = $uploadDir . basename($_FILES["image"]["name"]);
-
-    // Flytt bildet til serveren
-    if (!move_uploaded_file($_FILES["image"]["tmp_name"], $imagePath)) {
-        $error = "Feil ved opplasting av bildet.";
-        error_log("Feil ved opplasting av bildet: " . $_FILES["image"]["error"]);
-        $imagePath = NULL; // Sett bilde til NULL hvis opplastningen feiler
+        if (!move_uploaded_file($_FILES["image"]["tmp_name"], $imagePath)) {
+            $error = "Feil ved opplasting av bildet.";
+            error_log("Feil ved opplasting av bildet: " . $_FILES["image"]["error"]);
+            $imagePath = NULL;
+        }
     }
-}
 
-// Sjekk om e-posten allerede finnes i databasen
-$check_email = $conn->prepare("SELECT * FROM brukere WHERE e_post = ?");
-$check_email->bind_param("s", $email);
-$check_email->execute();
-$result = $check_email->get_result();
+    // Sjekk om e-posten allerede finnes i databasen
+    $check_email = $conn->prepare("SELECT * FROM brukere WHERE e_post = ?");
+    $check_email->bind_param("s", $email);
+    $check_email->execute();
+    $result = $check_email->get_result();
 
-if ($result->num_rows > 0) {
-    $error = "E-postadressen er allerede registrert!";
-} else {
-    // Sett inn bruker i databasen
-    $stmt = $conn->prepare("INSERT INTO brukere (navn, e_post, passord_hash, rolle, bilde, studieretning, studiekull) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssssss", $name, $email, $password, $role, $imagePath, $study_program, $year);
-
-    if ($stmt->execute()) {
-        $success = "Bruker registrert: $name ($email) som $role";
+    if ($result->num_rows > 0) {
+        $error = "E-postadressen er allerede registrert!";
     } else {
-        $error = "Feil ved registrering: " . $stmt->error;
-        error_log("Feil ved registrering: " . $stmt->error);
-    }
-}
+        // Sett inn foreleser eller student i brukere-tabellen
+        $stmt = $conn->prepare("INSERT INTO brukere (navn, e_post, passord_hash, rolle, bilde, studieretning, studiekull) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssss", $name, $email, $password, $role, $imagePath, $study_program, $year);
 
+        if ($stmt->execute()) {
+            $foreleser_id = $stmt->insert_id; // Hent ID-en til den nye foreleseren
+
+            if ($role === "foreleser" && $emnekode && $emnenavn && $pin_kode) {
+                // Opprett et nytt emne i databasen
+                $stmt_course = $conn->prepare("INSERT INTO emner (emnekode, emnenavn, foreleser_id, pin_kode) VALUES (?, ?, ?, ?)");
+                $stmt_course->bind_param("ssis", $emnekode, $emnenavn, $foreleser_id, $pin_kode);
+
+                if ($stmt_course->execute()) {
+                    $success = "Foreleser registrert og emne opprettet: $emnekode - $emnenavn";
+                } else {
+                    $error = "Feil ved opprettelse av emne: " . $stmt_course->error;
+                }
+            } else {
+                $success = "Bruker registrert: $name ($email) som $role";
+            }
+        } else {
+            $error = "Feil ved registrering: " . $stmt->error;
+            error_log("Feil ved registrering: " . $stmt->error);
+        }
+    }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="no">
@@ -112,10 +129,21 @@ if ($result->num_rows > 0) {
         </div>
 
         <!-- Felter for forelesere -->
-        <div id="lecturer-fields" class="hidden">
-            <label for="image">Profilbilde:</label>
-            <input type="file" name="image" id="image" accept="image/*"><br>
-        </div>
+        <!-- Felter for forelesere -->
+<div id="lecturer-fields" class="hidden">
+    <label for="image">Profilbilde:</label>
+    <input type="file" name="image" id="image" accept="image/*"><br>
+
+    <label for="emnekode">Emnekode:</label>
+    <input type="text" name="emnekode" id="emnekode"><br>
+
+    <label for="emnenavn">Emnenavn:</label>
+    <input type="text" name="emnenavn" id="emnenavn"><br>
+
+    <label for="pin_kode">PIN-kode (4 sifre):</label>
+    <input type="text" name="pin_kode" id="pin_kode" pattern="\d{4}" title="Må være 4 sifre"><br>
+</div>
+
 
         <label for="password">Passord:</label>
         <input type="password" name="password" id="password" required><br>
