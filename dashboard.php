@@ -25,7 +25,7 @@ try {
     die("Feil ved henting av emner: " . $e->getMessage());
 }
 
-// Hent meldinger til emnene foreleseren har opprettet
+// Hent meldinger knyttet til emner foreleseren underviser i
 try {
     $stmt_meldinger = $conn->prepare("
         SELECT m.id, m.innhold, m.dato_opprettet, b.e_post AS student_email, e.emnenavn 
@@ -38,6 +38,11 @@ try {
     $stmt_meldinger->bind_param("i", $foreleser_id);
     $stmt_meldinger->execute();
     $meldinger = $stmt_meldinger->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    // Debugging: Skriv ut SQL-resultater
+    if (empty($meldinger)) {
+        error_log("Ingen meldinger funnet for foreleser_id: " . $foreleser_id);
+    }
 } catch (Exception $e) {
     die("Feil ved henting av meldinger: " . $e->getMessage());
 }
@@ -108,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
                 </li>
             <?php endforeach; ?>
         <?php else: ?>
-            <p>Ingen meldinger for dine emner ennå.</p>
+            <p>Ingen meldinger funnet for dine emner.</p>
         <?php endif; ?>
     </ul>
 
