@@ -31,9 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
         if (!move_uploaded_file($_FILES["image"]["tmp_name"], $imagePath)) {
             $error = "Feil ved opplasting av bildet.";
             error_log("move_uploaded_file() feilet! Sjekk rettigheter for uploads/. TMP: " . $_FILES["image"]["tmp_name"]);
-        } else {
-            error_log("Fil lastet opp til: " . $imagePath);
-        }
+        } 
 
     // Sjekk om e-posten allerede finnes i databasen
     $check_email = $conn->prepare("SELECT id FROM brukere WHERE e_post = ?");
