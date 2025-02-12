@@ -21,24 +21,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     $emnenavn = ($role === "foreleser" && !empty($_POST['emnenavn'])) ? htmlspecialchars($_POST['emnenavn']) : NULL;
     $pin_kode = ($role === "foreleser" && !empty($_POST['pin_kode'])) ? htmlspecialchars($_POST['pin_kode']) : NULL;
 
-   // 📌 **Bildelagring på serveren (Ikke i databasen)**
-$imagePath = NULL;
-if ($role === "foreleser" && isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
-    $uploadDir = "uploads/";  // Mappen på serveren
-    $fileName = basename($_FILES["image"]["name"]);
-    $imagePath = $uploadDir . uniqid() . "_" . $fileName; // Unik ID for å unngå duplikater
-
-    // 🔍 DEBUGGING: Sjekk om filen faktisk mottas
-    var_dump($_FILES['image']);
-    exit();
-
-    // Prøv å flytte den opplastede filen
-    if (!move_uploaded_file($_FILES["image"]["tmp_name"], $imagePath)) {
-        $error = "Feil ved opplasting av bildet.";
-        $imagePath = NULL;
-    }
-}
-
+    // 📌 **Bildelagring på serveren (Ikke i databasen)**
+    $imagePath = NULL;
+    if ($role === "foreleser" && isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
+        $uploadDir = "uploads/";  // Mappen på serveren
+        $fileName = basename($_FILES["image"]["name"]); 
+        $imagePath = $uploadDir . uniqid() . "_" . $fileName; // Unik ID for å unngå duplikater
+        
+        if (!move_uploaded_file($_FILES["image"]["tmp_name"], $imagePath)) {
+            $error = "Feil ved opplasting av bildet.";
+            error_log("move_uploaded_file() feilet! Sjekk rettigheter for uploads/. TMP: " . $_FILES["image"]["tmp_name"]);
+        } else {
+            error_log("Fil lastet opp til: " . $imagePath);
+        }
 
     // Sjekk om e-posten allerede finnes i databasen
     $check_email = $conn->prepare("SELECT id FROM brukere WHERE e_post = ?");
