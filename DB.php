@@ -7,7 +7,7 @@ $dbname   = 'Datasikkerhet';   // Navnet på databasen din
 $username = 'datasikkerhet';   // Databasebrukernavn
 $password = 'DittPassord';    // Databasepassord
 
-try {
+/*try {
     // Opprett en ny PDO-kobling
     $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8";
     $pdo = new PDO($dsn, $username, $password);
@@ -22,5 +22,12 @@ try {
 } catch (PDOException $e) {
     // Dersom tilkoblingen mislykkes, stopp skriptet og vis feilmelding
     die("Kunne ikke koble til databasen: " . $e->getMessage());
+}*/
+// Koble til databasen
+$conn = new mysqli($host, $username, $password, $dbname);
+
+// Sjekk om tilkoblingen er vellykket
+if ($conn->connect_error) {
+    die("Tilkoblingsfeil: " . $conn->connect_error);
 }
 ?>
