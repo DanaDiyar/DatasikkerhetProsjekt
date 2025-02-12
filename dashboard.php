@@ -46,7 +46,7 @@
     <div id="change-password-form">
         <form method="POST">
             <input type="hidden" name="change_password" value="1">
-            <input type="password" name="old_password" placeholder="Gammelt passord" required>
+            <input type="password" name="old_password" placeholder="Nåværende passord" required>
             <input type="password" name="new_password" placeholder="Nytt passord" required>
             <button type="submit">Endre passord</button>
         </form>
