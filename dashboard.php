@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
 <header>
     <h1>Forelesers Dashboard</h1>
     <p>Velkommen, <?= htmlspecialchars($foreleser_navn) ?> (<?= htmlspecialchars($foreleser_email) ?>)</p>
-    <a href="logout.php">Logg ut</a>
+    <p><a href="Login.php" class="btn">Logg ut</a></p>
 </header>
 
 <div class="container">

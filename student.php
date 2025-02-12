@@ -71,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['send_message'])) {
 <header>
     <h1>Student Dashboard</h1>
     <p>Velkommen, <?= htmlspecialchars($student_navn) ?> (<?= htmlspecialchars($student_email) ?>)</p>
-    <a href="logout.php">Logg ut</a>
+    <p><a href="Login.php" class="btn">Logg ut</a></p>
 </header>
 
 <div class="container">
