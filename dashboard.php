@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reply'])) {
         $message_id = $_POST['message_id'];
         $reply = htmlspecialchars($_POST['reply']);
 
-        $stmt = $conn->prepare("INSERT INTO svar (melding_id, bruker_id, innhold) VALUES (?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO svar (melding_id, foreleser_id, innhold) VALUES (?, ?, ?)");
         $stmt->bind_param("iis", $message_id, $foreleser_id, $reply);
         $stmt->execute();
 
