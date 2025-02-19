@@ -98,7 +98,7 @@ if (isset($_POST['subject_code']) && isset($_POST['pin_code'])) {
 
         <?php foreach ($messages as $msg): ?>
             <div style="border:1px solid #ccc; margin-bottom:10px; padding:10px;">
-                <p><strong>Melding (anonym):</strong> <?= htmlspecialchars($msg['innhold']) ?></p>
+                <p><strong>Melding:</strong> <?= htmlspecialchars($msg['innhold']) ?></p>
                 <?php if ($msg['svar_innhold']): ?>
                     <p><strong>Svar fra foreleser:</strong> <?= htmlspecialchars($msg['svar_innhold']) ?></p>
                 <?php endif; ?>
