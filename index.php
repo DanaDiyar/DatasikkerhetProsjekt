@@ -81,7 +81,12 @@ if (isset($_POST['subject_code']) && isset($_POST['pin_code'])) {
 
     <!-- Skjema for å oppgi emnekode og PIN-kode -->
     <form method="post">
-        Emnekode: <input type="text" name="subject_code" required>
+        <!-- Emnekode: <input type="text" name="subject_code" required> -->
+        <select name="subject_id" required>
+            <?php foreach ($subjects as $id => $subject): ?>
+                <option value="<?= htmlspecialchars($id) ?>"><?= htmlspecialchars($subject['name']) ?></option>
+            <?php endforeach; ?>
+        </select><br> 
         PIN-kode: <input type="password" name="pin_code" required maxlength="4">
         <input type="submit" class="btn" value="Vis meldinger">
     </form>
