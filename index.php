@@ -16,30 +16,6 @@ if (isset($_POST['comment_text']) && isset($_POST['message_id'])) {
     echo "Kommentar er lagt til!";
 }
 
-// Hent studentinfo fra sesjonen
-$student_id = $_SESSION['user_id'];
-$student_email = $_SESSION['user_email'];
-$student_navn = $_SESSION['user_name'];
-
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Hent emner studenten er påmeldt til (hvis aktuelt)
-$subjects = [];
-$query = "SELECT id, emnenavn, foreleser_id FROM emner";
-$result = $conn->query($query);
-
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $subjects[$row['id']] = [
-            'name' => $row['emnenavn'],
-            'foreleser_id' => $row['foreleser_id']
-        ];
-    }
-} else {
-    $subjects[0] = ['name' => "Ingen emner funnet", 'foreleser_id' => null];
-}
-
 /* Håndtering av innlogging for emne */
 if (isset($_POST['subject_code']) && isset($_POST['pin_code'])) {
     $subjectCodeInput = $_POST['subject_code'];
@@ -105,12 +81,7 @@ if (isset($_POST['subject_code']) && isset($_POST['pin_code'])) {
 
     <!-- Skjema for å oppgi emnekode og PIN-kode -->
     <form method="post">
-        <!-- Emnekode: <input type="text" name="subject_code" required> -->
-        Emnekode: <select name="subject_id" required>
-            <?php foreach ($subjects as $id => $subject): ?>
-                <option value="<?= htmlspecialchars($id) ?>"><?= htmlspecialchars($subject['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
+        Emnekode: <input type="text" name="subject_code" required>
         PIN-kode: <input type="password" name="pin_code" required maxlength="4">
         <input type="submit" class="btn" value="Vis meldinger">
     </form>
