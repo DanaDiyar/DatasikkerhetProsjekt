@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
                 <li>
                     <strong><?= htmlspecialchars($melding['emnenavn']) ?></strong>
                     <p>Melding #<?= $melding['id'] ?>: <?= htmlspecialchars($melding['innhold']) ?></p>
-                    <p><small>Sendt av: <?= htmlspecialchars($melding['student_email']) ?> - <?= $melding['dato_opprettet'] ?></small></p>
+                    <p><small>Sendt av: Anonym student - <?= $melding['dato_opprettet'] ?></small></p>
                     <button onclick="document.getElementById('reply-form-<?= $melding['id'] ?>').style.display='block'">
                         Svar
                     </button>
