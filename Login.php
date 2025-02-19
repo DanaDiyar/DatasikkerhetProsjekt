@@ -119,19 +119,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logg inn / Registrering</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        function toggleFields() {
+            const role = document.getElementById("role").value;
+            document.getElementById("lecturer-fields").style.display = (role === "foreleser") ? "block" : "none";
+        }
+    </script>
 </head>
 <body>
     <h2>Registrering</h2>
     <form method="post" enctype="multipart/form-data">
         <input type="text" name="name" placeholder="Navn" required><br>
         <input type="email" name="email" placeholder="E-post" required><br>
-        <select name="role" id="role" required>
+
+        <select name="role" id="role" required onchange="toggleFields()">
             <option value="">Velg rolle</option>
             <option value="student">Student</option>
             <option value="foreleser">Foreleser</option>
         </select><br>
 
-        <div id="lecturer-fields">
+        <!-- Feltene for forelesere: Skjult som standard -->
+        <div id="lecturer-fields" style="display: none;">
             <input type="file" name="image" accept="image/*"><br>
             <input type="text" name="emnekode" placeholder="Emnekode"><br>
             <input type="text" name="emnenavn" placeholder="Emnenavn"><br>
@@ -148,6 +156,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
         <input type="password" name="password" placeholder="Passord" required><br>
         <button type="submit" name="login">Logg inn</button>
     </form>
+
     <p><a href="glemt_passord.php">Glemt passord?</a></p>
     <p><a href="index.php" class="btn">Gjestebruker</a></p>
 
@@ -155,3 +164,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     <?php if ($success) echo "<p style='color: green;'>$success</p>"; ?>
 </body>
 </html>
+
