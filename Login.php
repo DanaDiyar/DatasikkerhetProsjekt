@@ -1,5 +1,10 @@
 <?php
 session_start();
+
+if (empty($_SESSION['captcha'])) {
+    $_SESSION['captcha'] = rand(1000, 9999); // Fire tilfeldige sifre
+} 
+
 require 'db_connect.php'; // Kobling til databasen
 
 $success = "";
