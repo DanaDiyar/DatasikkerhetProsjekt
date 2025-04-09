@@ -7,6 +7,49 @@ if (empty($_SESSION['captcha'])) {
 require 'db_connect.php'; // Kobling til databasen
 $success = "";
 $error = "";
+
+// Behandle innlogging
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
+    // CAPTCHA-sjekk først
+    if (!isset($_POST['captcha_input']) || $_POST['captcha_input'] != $_SESSION['captcha']) {
+        $error = "Feil CAPTCHA. Prøv igjen.";
+        $_SESSION['captcha'] = rand(1000, 9999); // Generer ny kode
+    } else {
+        $email = htmlspecialchars($_POST['email']);
+        $password = $_POST['password'];
+
+        $stmt = $conn->prepare("SELECT id, navn, e_post, passord_hash, rolle FROM brukere WHERE e_post = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $user = $result->fetch_assoc();
+
+            if (password_verify($password, $user['passord_hash'])) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_name'] = $user['navn'];
+                $_SESSION['user_email'] = $user['e_post'];
+                $_SESSION['user_role'] = $user['rolle'];
+                $_SESSION['captcha'] = rand(1000, 9999); // Nullstill CAPTCHA
+
+                if ($user['rolle'] === "foreleser") {
+                    header("Location: foreleser_dashboard.php");
+                } else {
+                    header("Location: student_dashboard.php");
+                }
+                exit();
+            } else {
+                $error = "Feil passord. Prøv igjen.";
+                $_SESSION['captcha'] = rand(1000, 9999);
+            }
+        } else {
+            $error = "E-postadressen finnes ikke.";
+            $_SESSION['captcha'] = rand(1000, 9999);
+        }
+    }
+}
+
 // Behandle skjemaet når det sendes
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     $name = htmlspecialchars($_POST['name']);
@@ -29,46 +72,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
             $error = "Feil ved opplasting av bildet.";
             error_log("Feil ved opplasting av bildet: " . $_FILES["image"]["error"]);
             $imagePath = NULL;
-        }
-    }// Behandle innlogging
-    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
-        // CAPTCHA-sjekk først
-        if (!isset($_POST['captcha_input']) || $_POST['captcha_input'] != $_SESSION['captcha']) {
-            $error = "Feil CAPTCHA. Prøv igjen.";
-            $_SESSION['captcha'] = rand(1000, 9999); // Generer ny kode
-        } else {
-            $email = htmlspecialchars($_POST['email']);
-            $password = $_POST['password'];
-    
-            $stmt = $conn->prepare("SELECT id, navn, e_post, passord_hash, rolle FROM brukere WHERE e_post = ?");
-            $stmt->bind_param("s", $email);
-            $stmt->execute();
-            $result = $stmt->get_result();
-    
-            if ($result->num_rows > 0) {
-                $user = $result->fetch_assoc();
-    
-                if (password_verify($password, $user['passord_hash'])) {
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['user_name'] = $user['navn'];
-                    $_SESSION['user_email'] = $user['e_post'];
-                    $_SESSION['user_role'] = $user['rolle'];
-                    $_SESSION['captcha'] = rand(1000, 9999); // Nullstill CAPTCHA
-    
-                    if ($user['rolle'] === "foreleser") {
-                        header("Location: foreleser_dashboard.php");
-                    } else {
-                        header("Location: student_dashboard.php");
-                    }
-                    exit();
-                } else {
-                    $error = "Feil passord. Prøv igjen.";
-                    $_SESSION['captcha'] = rand(1000, 9999);
-                }
-            } else {
-                $error = "E-postadressen finnes ikke.";
-                $_SESSION['captcha'] = rand(1000, 9999);
-            }
         }
     }
     
