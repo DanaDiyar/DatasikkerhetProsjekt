@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>Dokumentasjon – Sikkerhetstiltak</title>
+</head>
+<body>
+    <h1>Dokumentasjon av sikkerhetstiltak</h1>
+
+    <h2>Hva vi har gjort</h2>
+    <p>
+        Det første vi gjorde var å følge det som hadde blitt skrevet i oppgavebeskrivelsen, altså sette oss ned hele gruppen og gå gjennom et RMF – Risk Management Framework – en type risikoanalyse av prosjektet vårt og nettsiden vår så langt. 
+        I tillegg til dette laget vi en Abuse Case som viser hvordan noen potensielt kan skade systemet.
+    </p>
+
+    <h2>Hva den andre gruppen gjorde mot vårt prosjekt</h2>
+    <p>
+        En annen gruppe gjennomførte en penetrasjonstest på systemet vårt i steg 1.1/1.2. De testet hvor lett det var å få uautorisert tilgang. 
+    </p>
+    <p>
+        Vi tror de klarte å komme inn fordi:
+    </p>
+    <ul>
+        <li>Vi hadde ikke god nok sikkerhet</li>
+        <li>Det manglet pålogging og tilgangskontroll</li>
+        <li>Det var ingen inputvalidering, så de kunne skrive inn farlig kode</li>
+        <li>De brukte kanskje bakdører eller skript for å få tilgang</li>
+        <li>Vi hadde heller ikke logging, så vi så ikke hva som skjedde før det var for sent</li>
+    </ul>
+
+    <h2>Risk-Based Security Test – Gruppe 2</h2>
+    <h3>Hva er en risk-based security test?</h3>
+    <p>
+        En risk-based security test betyr at vi tester systemet basert på de risikoene vi fant i risikoanalysen. 
+        Vi tester ikke tilfeldig, men målrettet det som faktisk kan være farlig eller sårbart.
+    </p>
+    <p>
+        Vi valgte å gjøre testene manuelt, ved å spille rollen som "angriper" og se hva vi klarte å gjøre i systemet.
+    </p>
+
+    <h3>Hvordan vi gjorde det</h3>
+    <p>
+        Vi brukte egne abuse cases, basert på risikoanalysen vår. Deretter testet vi direkte i systemet.
+    </p>
+
+    <h4>1. Manglende inputvalidering</h4>
+    <ul>
+        <li><strong>Risiko:</strong> Brukeren kan skrive inn farlig kode (f.eks. SQL)</li>
+        <li><strong>Abuse case:</strong> "Som angriper vil jeg skrive <code>OR 1=1</code> i login-feltet for å logge inn uten brukernavn og passord."</li>
+        <li><strong>Test:</strong> Vi prøvde dette i login-feltet.</li>
+        <li><strong>Resultat:</strong> Systemet godtok inputen.</li>
+        <li><strong>Tiltak:</strong> Vi må bruke inputvalidering og parametrisert SQL.</li>
+    </ul>
+
+    <h4>2. Ingen autentisering</h4>
+    <ul>
+        <li><strong>Risiko:</strong> Alle kan få tilgang til systemet uten å logge inn</li>
+        <li><strong>Abuse case:</strong> "Som angriper vil jeg åpne en intern URL direkte uten å være logget inn."</li>
+        <li><strong>Test:</strong> Vi åpnet URL direkte.</li>
+        <li><strong>Resultat:</strong> Vi fikk tilgang.</li>
+        <li><strong>Tiltak:</strong> Lage påloggingssystem og sjekke innloggingstilstand.</li>
+    </ul>
+
+    <h4>3. Ingen tilgangskontroll (roller)</h4>
+    <ul>
+        <li><strong>Risiko:</strong> Vanlige brukere kan gjøre ting kun admin skal kunne</li>
+        <li><strong>Abuse case:</strong> "Som vanlig bruker vil jeg prøve å slette en annen brukers data."</li>
+        <li><strong>Test:</strong> Vi simulerte sletting via URL/endepunkt.</li>
+        <li><strong>Resultat:</strong> Systemet lot oss gjøre det.</li>
+        <li><strong>Tiltak:</strong> Sjekke brukerrolle før sensitive handlinger.</li>
+    </ul>
+
+    <p>
+        Etter at gruppen ble enige om risikoer, konsekvenser og tiltak, fordelte vi oppgaver for å forbedre sikkerheten. 
+        Vi rakk ikke å implementere alt, men prøvde så mange tiltak som mulig. Noen forsøkte vi flere ganger uten å lykkes helt – da måtte vi gå videre.
+    </p>
+
+    <h2>Tiltak</h2>
+
+    <h3>1. CAPTCHA mot bruteforce-angrep</h3>
+    <p>
+        For å hindre automatiserte innloggingsforsøk (bruteforce), implementerte vi en enkel CAPTCHA på innloggingssiden. 
+        CAPTCHA hindrer roboter fra å prøve uendelig mange kombinasjoner av brukernavn og passord, og gir oss et ekstra lag med sikkerhet. 
+        Dette var viktig, spesielt siden vi tidligere ikke hadde noen form for beskyttelse mot slike angrep.
+    </p>
+
+    <h3>2. Inputvalidering mot SQL-injection</h3>
+    <p>
+        For å beskytte systemet mot SQL-injection bruker vi forberedte spørringer (prepared statements) med <code>prepare()</code> og <code>bind_param()</code> i MySQLi. 
+        Det betyr at all input skilles fra selve SQL-setningen, og dermed aldri kan tolkes som kode.
+    </p>
+    <p>
+        Eksempler der vi bruker dette er: innlogging med e-post, registrering av brukere, og opprettelse av emner og PIN-koder.
+        I tillegg bruker vi <code>trim()</code> og <code>htmlspecialchars()</code> for å rense brukerinput. 
+        Dette sammen med CAPTCHA gjør systemet betydelig tryggere mot automatiserte og ondsinnede angrep.
+    </p>
+
+    <h3>3. Brannmur mot DoS (tjenestenekt-angrep)</h3>
+    <p>
+        Vi har installert en webapplikasjonsbrannmur (WAF) på vår Apache-server. Vi bruker standardreglene sammen med OWASP Core Rule Set (CRS).
+        I tillegg har vi laget egne regler for å blokkere spesifikke IP-adresser og mistenkelige brukeragenter.
+    </p>
+    <p>
+        Brannmuren forsøker automatisk å blokkere kjente angrepsmønstre, som SQL-injeksjon og svært lange URL-er som kan tyde på DoS-angrep.
+        Dette gjør systemet mer robust og beskytter mot mange vanlige angrep.
+    </p>
+
+    <p><strong>Oppsummering:</strong> Vi har jobbet målrettet med å identifisere og forbedre sikkerheten i systemet vårt, og testet systemet både som utviklere og som angripere. Resultatet er et tryggere og mer gjennomtenkt system – selv om vi fortsatt har mer å lære og forbedre.</p>
+
+</body>
+</html>
