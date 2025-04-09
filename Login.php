@@ -34,9 +34,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                 $_SESSION['captcha'] = rand(1000, 9999); // Nullstill CAPTCHA
 
                 if ($user['rolle'] === "foreleser") {
-                    header("Location: foreleser_dashboard.php");
+                    header("Location: dashboard.php");
                 } else {
-                    header("Location: student_dashboard.php");
+                    header("Location: student.php");
                 }
                 exit();
             } else {
