@@ -17,9 +17,32 @@ if (isset($_POST['comment_text']) && isset($_POST['message_id'])) {
 }
 
 /* Håndtering av innlogging for emne */
+
 if (isset($_POST['subject_code']) && isset($_POST['pin_code'])) {
-    $subjectCodeInput = $_POST['subject_code'];
-    $pinCodeInput     = $_POST['pin_code'];
+    $subjectCodeInput = trim($_POST['subject_code']);
+    $pinCodeInput     = trim($_POST['pin_code']);
+
+    // Sjekk at begge feltene er fylt ut
+    if ($subjectCodeInput === '' || $pinCodeInput === '') {
+        echo "Du må fylle inn både emnekode og PIN-kode!";
+        exit;
+    }
+
+    // Sjekk at emnekoden bare inneholder bokstaver og/eller tall (uten regex)
+    if (!ctype_alnum($subjectCodeInput)) {
+        echo "Emnekoden kan kun inneholde bokstaver og tall!";
+        exit;
+    }
+
+    // Sjekk at PIN-koden kun inneholder tall og er nøyaktig 4 sifre
+    if (!ctype_digit($pinCodeInput) || strlen($pinCodeInput) !== 4) {
+        echo "PIN-koden må være nøyaktig 4 sifre!";
+        exit;
+    }
+    
+        // Nå er inputen trygg å bruke i prepared statement
+        // ...
+    
 
     // Finn emnet ut fra emnekode
     $stmt = $conn->prepare("SELECT * FROM emner WHERE emnekode = ?");
