@@ -1,143 +1,70 @@
 <?php
-require 'DB.php'; // Inneholder MySQLi-koblingen i variabelen $conn
+session_start();
+require 'DB.php'; // $conn er MySQLi-tilkoblingen
 
-$messages = [];
-$subjectInfo = null;
+$error = "";
 
-/* Håndtering av kommentarinnsending */
-if (isset($_POST['comment_text']) && isset($_POST['message_id'])) {
-    $commentText = $_POST['comment_text'];
-    $messageId   = $_POST['message_id'];
-
-    $stmtComm = $conn->prepare("INSERT INTO kommentarer (melding_id, innhold) VALUES (?, ?)");
-    $stmtComm->bind_param("is", $messageId, $commentText);
-    $stmtComm->execute();
-    $stmtComm->close();
-    echo "Kommentar er lagt til!";
+// Hvis brukeren allerede er innlogget, send videre
+if (isset($_SESSION['user_id'])) {
+    header("Location: dashboard.php");
+    exit();
 }
 
-/* Håndtering av innlogging for emne */
-if (isset($_POST['subject_code']) && isset($_POST['pin_code'])) {
-    $subjectCodeInput = $_POST['subject_code'];
-    $pinCodeInput     = $_POST['pin_code'];
+// Håndter innlogging
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $email = trim($_POST['email']);
+    $password = $_POST['password'];
 
-    // Finn emnet ut fra emnekode
-    $stmt = $conn->prepare("SELECT * FROM emner WHERE emnekode = ?");
-    $stmt->bind_param("s", $subjectCodeInput);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $subject = $result->fetch_assoc();
-    $stmt->close();
-
-    if ($subject) {
-        // Sjekk PIN
-        if ($subject['pin_kode'] == $pinCodeInput) {
-            $subjectInfo = $subject;
-            
-            // Hent meldinger for dette emnet
-            $stmtMsg = $conn->prepare("SELECT m.*, u.navn as student_navn, s.innhold as svar_innhold, s.dato_opprettet as svar_dato 
-                                       FROM meldinger m
-                                       LEFT JOIN svar s ON m.id = s.melding_id
-                                       LEFT JOIN brukere u ON m.student_id = u.id
-                                       WHERE m.emne_id = ?
-                                       ORDER BY m.dato_opprettet DESC");
-            $stmtMsg->bind_param("i", $subject['id']);
-            $stmtMsg->execute();
-            $resultMsg = $stmtMsg->get_result();
-            $messages = $resultMsg->fetch_all(MYSQLI_ASSOC);
-            $stmtMsg->close();
-        } else {
-            echo "Feil PIN-kode!";
-        }
+    // ✅ Sjekk at begge feltene er fylt ut
+    if (empty($email) || empty($password)) {
+        $error = "Alle felt må fylles ut.";
     } else {
-        echo "Fant ikke emnekode!";
-    }
-}
+        // ✅ Bruk prepared statement for å beskytte mot SQL injection
+        $stmt = $conn->prepare("SELECT id, navn, rolle, passord_hash FROM brukere WHERE e_post = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
 
-/* Håndtering av rapportering av en melding */
-if (isset($_GET['report'])) {
-    $messageId = $_GET['report'];
-    $grunn = 'Rapportert via gjesteside';
-    $stmtRep = $conn->prepare("INSERT INTO rapporterte_meldinger (melding_id, grunn) VALUES (?, ?)");
-    $stmtRep->bind_param("is", $messageId, $grunn);
-    $stmtRep->execute();
-    $stmtRep->close();
-    echo "Meldingen er rapportert!";
+        if ($user && password_verify($password, $user['passord_hash'])) {
+            // ✅ Lagre brukerdata i session
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_email'] = $email;
+            $_SESSION['user_name'] = $user['navn'];
+            $_SESSION['user_role'] = $user['rolle'];
+
+            // 🚀 Send til dashboard
+            header("Location: dashboard.php");
+            exit();
+        } else {
+            $error = "Feil e-post eller passord.";
+        }
+    }
 }
 ?>
 
-
 <!DOCTYPE html>
-<html>
+<html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Gjesteside</title>
+    <title>Logg inn</title>
     <link rel="stylesheet" href="style_index.css">
 </head>
 <body>
+    <h1>Logg inn</h1>
+    <?php if (!empty($error)) echo "<p style='color: red;'>$error</p>"; ?>
 
-    <h1>Gjest – vis meldinger for emne</h1>
-
-    <p><a href="login.php" class="btn">Logg inn</a> (for studenter/forelesere)</p>
-
-    <!-- Skjema for å oppgi emnekode og PIN-kode -->
     <form method="post">
-        Emnekode: <input type="text" name="subject_code" required>
-        PIN-kode: <input type="password" name="pin_code" required maxlength="4">
-        <input type="submit" class="btn" value="Vis meldinger">
+        <label for="email">E-post:</label><br>
+        <input type="email" name="email" required><br><br>
+
+        <label for="password">Passord:</label><br>
+        <input type="password" name="password" required><br><br>
+
+        <input type="submit" class="btn" value="Logg inn">
     </form>
-    <hr> 
 
-    <!-- Viser emneinfo, meldinger, svar og kommentarer (kun dersom skjemaet er POSTET og $subjectInfo er satt) -->
-    <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && $subjectInfo): ?>
-        <h2><?= htmlspecialchars($subjectInfo['emnekode']) ?> - <?= htmlspecialchars($subjectInfo['emnenavn']) ?></h2>
-        <?php
-        // Hent foreleser-info
-        $stmtLect = $conn->prepare("SELECT navn, bilde FROM brukere WHERE id = ?");
-        $stmtLect->bind_param("i", $subjectInfo['foreleser_id']);
-        $stmtLect->execute();
-        $resultLect = $stmtLect->get_result();
-        $lecturerData = $resultLect->fetch_assoc();
-        $stmtLect->close();
-        ?>
-        <p>Foreleser: <?= htmlspecialchars($lecturerData['navn']) ?></p>
-        <?php if ($lecturerData['bilde']): ?>
-            <img src="<?= htmlspecialchars($lecturerData['bilde']) ?>" alt="Bilde av foreleser" width="100">
-        <?php endif; ?>
-
-        <hr>
-
-        <?php foreach ($messages as $msg): ?>
-            <div style="border:1px solid #ccc; margin-bottom:10px; padding:10px;">
-                <p><strong>Melding (anonym):</strong> <?= htmlspecialchars($msg['innhold']) ?></p>
-                <?php if ($msg['svar_innhold']): ?>
-                    <p><strong>Svar fra foreleser:</strong> <?= htmlspecialchars($msg['svar_innhold']) ?></p>
-                <?php endif; ?>
-                
-                <?php
-                // Hent kommentarer til denne meldingen
-                $stmtComm = $conn->prepare("SELECT innhold, dato_opprettet FROM kommentarer WHERE melding_id = ? ORDER BY dato_opprettet DESC");
-                $stmtComm->bind_param("i", $msg['id']);
-                $stmtComm->execute();
-                $resultComm = $stmtComm->get_result();
-                $comments = $resultComm->fetch_all(MYSQLI_ASSOC);
-                $stmtComm->close();
-                ?>
-                <div style="margin-left:20px;">
-                    <strong>Kommentarer:</strong><br>
-                    <?php foreach ($comments as $c): ?>
-                        <p>- <?= htmlspecialchars($c['innhold']) ?> (<?= $c['dato_opprettet'] ?>)</p>
-                    <?php endforeach; ?>
-                    <form method="post">
-                        <input type="hidden" name="message_id" value="<?= $msg['id'] ?>">
-                        <input type="text" name="comment_text" placeholder="Skriv en kommentar...">
-                        <input type="submit" class="btn" value="Legg til">
-                    </form>
-                </div>
-                <p><a href="?report=<?= $msg['id'] ?>">Rapporter upassende melding</a></p>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <p><a href="index.php">Tilbake til gjesteside</a></p>
 </body>
 </html>
-
