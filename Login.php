@@ -40,7 +40,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
             $email = htmlspecialchars($_POST['email']);
             $password = $_POST['password'];
     
-            // Sjekk om e-posten finnes
             $stmt = $conn->prepare("SELECT id, navn, e_post, passord_hash, rolle FROM brukere WHERE e_post = ?");
             $stmt->bind_param("s", $email);
             $stmt->execute();
@@ -54,7 +53,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
                     $_SESSION['user_name'] = $user['navn'];
                     $_SESSION['user_email'] = $user['e_post'];
                     $_SESSION['user_role'] = $user['rolle'];
-    
                     $_SESSION['captcha'] = rand(1000, 9999); // Nullstill CAPTCHA
     
                     if ($user['rolle'] === "foreleser") {
