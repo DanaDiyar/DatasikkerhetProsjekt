@@ -66,35 +66,6 @@ if (isset($_GET['report'])) {
 }
 ?>
 
-<?php
-// Koble til SQLite-database
-$pdo = new PDO("sqlite:users.db");
-$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-// Hent brukernavn fra GET eller POST (her bruker vi GET)
-$username = $_GET['username'] ?? '';
-
-// Valider input: Kun bokstaver og tall, maks 20 tegn
-if (!preg_match('/^[a-zA-Z0-9]{1,20}$/', $username)) {
-    echo "Ugyldig brukernavn!";
-    exit;
-}
-
-// Bruk parameterisert spørring
-$stmt = $pdo->prepare("SELECT * FROM users WHERE username = :username");
-$stmt->bindParam(':username', $username, PDO::PARAM_STR);
-$stmt->execute();
-
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if ($user) {
-    echo "Bruker funnet: " . htmlspecialchars($user['username']) . "<br>";
-    echo "E-post: " . htmlspecialchars($user['email']);
-} else {
-    echo "Bruker ikke funnet.";
-}
-?>
-
 
 <!DOCTYPE html>
 <html>
