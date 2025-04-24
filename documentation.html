@@ -105,6 +105,44 @@
         Dette gjør systemet mer robust og beskytter mot mange vanlige angrep.
     </p>
 
+    <h3>4. Dokumentasjon av HTTPS og Logging</h3>
+
+    <h4>Innføring av HTTPS</h4>
+    <p>
+        Vi har konfigurert Apache-serveren vår til å bruke HTTPS for å sikre kommunikasjonen mellom klient og server. 
+        Dette ble gjort ved å opprette og bruke et selvsignert SSL-sertifikat, som ble lagt inn i Apache-konfigurasjonen i filen <code>steg2-ssl.conf</code>.
+    </p>
+    <p>
+        For å sikre at alle forespørsler automatisk omdirigeres til HTTPS, brukte vi følgende redirect-konfigurasjon i vår VirtualHost for port 80, hentet fra forelesningsnotatene:
+    </p>
+
+    <img src="HTTPS.png" alt="HTTPS bilde">
+    <p><em>Bilde: Eksempel på redirect-konfigurasjon, hentet fra forelesningen.</em></p>
+    <p>
+        Vi støtte på problemer med at port 443 (HTTPS) var stengt i brannmuren. Dette ble løst ved å åpne porten manuelt med UFW (Uncomplicated Firewall).
+    </p>
+
+    <h4>Logging for sikkerhet</h4>
+    <p>
+        I tillegg til å sikre trafikken med HTTPS, har vi satt opp logging for å overvåke serverens aktivitet og avdekke eventuelle sikkerhetsbrudd.
+    </p>
+    <p>
+        Apache logger både vanlige forespørsler og feil i filene <code>/var/log/apache2/access.log</code> og <code>error.log</code>. 
+        Vi har også benyttet <code>tail</code>-kommandoen for å verifisere at loggingen fungerer mens vi utfører handlinger på nettstedet vårt.
+    </p>
+    <p>
+        Vi bruker også følgende systemlogger for å dekke mer generell logging:
+    </p>
+    <ul>
+        <li><code>journalctl</code>: for systemtjenester</li>
+        <li><code>auth.log</code>: for innlogginger og sudo-bruk</li>
+        <li><code>last</code>: for å vise innlogginger</li>
+        <li><code>ufw.log</code>: for brannmuraktivitet</li>
+    </ul>
+    <p>
+        Dette gir oss full oversikt over både trafikk til nettsiden og sikkerhetsrelevante hendelser på serveren.
+    </p>
+
     <p><strong>Oppsummering:</strong> Vi har jobbet målrettet med å identifisere og forbedre sikkerheten i systemet vårt, og testet systemet både som utviklere og som angripere. Resultatet er et tryggere og mer gjennomtenkt system – selv om vi fortsatt har mer å lære og forbedre.</p>
 
     <h2>RMF og AbuseCase:</h2>
